@@ -1,0 +1,56 @@
+<view class="container">
+  <view class="header">
+    <view class="avatar">
+      <image class="avatar-img" src="/assets/default_avatar.png" mode="aspectFill"></image>
+    </view>
+    <view class="welcome-text">
+      <view class="welcome">欢迎使用数学走题训练</view>
+      <view class="user-name" wx:if="{{userName}}">{{userName}}</view>
+    </view>
+  </view>
+
+  <!-- 拍照解题功能 -->
+  <view class="feature-card" bindtap="navigateToPhotoSolve">
+    <view class="feature-icon">
+      <image src="/assets/icon_camera.png" mode="aspectFit"></image>
+    </view>
+    <view class="feature-text">拍照解题</view>
+  </view>
+
+  <!-- 最近任务列表 -->
+  <view class="recent-tasks">
+    <view class="section-title">最近任务</view>
+    
+    <view class="task-list">
+      <block wx:if="{{loading}}">
+        <view class="loading">加载中...</view>
+      </block>
+      
+      <block wx:elif="{{tasks.length === 0}}">
+        <view class="empty-state">
+          <view class="empty-icon">📝</view>
+          <view class="empty-text">暂无任务</view>
+          <view class="empty-hint">拍照解题后会自动创建任务</view>
+        </view>
+      </block>
+      
+      <block wx:else>
+        <view 
+          class="task-item" 
+          wx:for="{{tasks}}" 
+          wx:key="id" 
+          bindtap="navigateToTask" 
+          data-task-id="{{item.id}}">
+          <view class="task-info">
+            <view class="task-title">{{item.title}}</view>
+            <view class="task-date">截止日期: {{item.dueDate}}</view>
+          </view>
+          <view class="task-status {{item.status === '已完成' ? 'completed' : item.status === '进行中' ? 'in-progress' : ''}}">
+            {{item.status}}
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view> 
+

@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "学生主页",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "task-list": "/components/taskList/index"
+  }
+} 
+

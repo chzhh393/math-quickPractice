@@ -1,0 +1,292 @@
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 30rpx 0;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-area {
+  background-color: #fff;
+  border-radius: 15rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.photo-placeholder {
+  border: 2rpx dashed #ccc;
+  border-radius: 10rpx;
+  height: 400rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.photo-placeholder .icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+  color: #999;
+}
+
+.photo-placeholder .text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.image-preview {
+  background-color: #fff;
+  border-radius: 15rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.image-preview image {
+  width: 100%;
+  height: 400rpx;
+  border-radius: 10rpx;
+}
+
+.image-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20rpx;
+}
+
+.action-button {
+  flex: 1;
+  margin: 0 10rpx;
+  font-size: 28rpx;
+  padding: 15rpx 0;
+}
+
+.action-button.primary {
+  background-color: #3A86FF;
+  color: #fff;
+}
+
+.action-button.secondary {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.error-message {
+  background-color: #ffebee;
+  border-radius: 15rpx;
+  padding: 20rpx;
+  margin-bottom: 30rpx;
+  display: flex;
+  align-items: center;
+}
+
+.error-icon {
+  margin-right: 15rpx;
+  font-size: 32rpx;
+}
+
+.error-text {
+  font-size: 26rpx;
+  color: #d32f2f;
+}
+
+.result-section {
+  background-color: #fff;
+  border-radius: 15rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  color: #333;
+}
+
+.problems-list {
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.problem-item {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.problem-item:last-child {
+  border-bottom: none;
+}
+
+.problem-number {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #3A86FF;
+  margin-bottom: 10rpx;
+}
+
+.problem-content {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.footer {
+  margin-top: auto;
+  padding: 30rpx 0;
+}
+
+.tips {
+  background-color: #e3f2fd;
+  border-radius: 15rpx;
+  padding: 20rpx;
+}
+
+.tip-title {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #1976d2;
+  margin-bottom: 10rpx;
+}
+
+.tip-item {
+  font-size: 24rpx;
+  color: #555;
+  margin-bottom: 5rpx;
+}
+
+.image-container {
+  width: 100%;
+  margin-bottom: 40rpx;
+}
+
+.image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  background-color: #f5f5f5;
+  border: 2rpx dashed #ccc;
+  border-radius: 12rpx;
+}
+
+.placeholder-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 20rpx;
+}
+
+.placeholder-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.preview-actions {
+  display: flex;
+  justify-content: center;
+  padding: 20rpx 0;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.action-btn {
+  font-size: 28rpx;
+  padding: 10rpx 30rpx;
+  background-color: white;
+  color: #3A86FF;
+  border: 1rpx solid #3A86FF;
+  border-radius: 30rpx;
+  line-height: 1.5;
+}
+
+.tip-dot {
+  margin-right: 16rpx;
+  color: #3A86FF;
+  font-weight: bold;
+}
+
+.tip-text {
+  font-size: 26rpx;
+  color: #666;
+  flex: 1;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40rpx;
+}
+
+.btn-secondary, .btn-primary {
+  flex: 1;
+  margin: 0 20rpx;
+}
+
+.disabled {
+  opacity: 0.5;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #3A86FF;
+  border-radius: 50%;
+  margin-bottom: 20rpx;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #333;
+} 
+

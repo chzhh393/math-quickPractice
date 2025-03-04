@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/student/index/index",
+    "pages/student/photoSolve/index",
+    "pages/student/problemSolving/index",
+    "pages/parent/index/index",
+    "pages/parent/taskDetails/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#4285f4",
+    "navigationBarTitleText": "数学走题训练",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#4285f4",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/student/index/index",
+        "text": "学生",
+        "iconPath": "assets/icon_student.png",
+        "selectedIconPath": "assets/icon_student_selected.png"
+      },
+      {
+        "pagePath": "pages/parent/index/index",
+        "text": "家长",
+        "iconPath": "assets/icon_parent.png",
+        "selectedIconPath": "assets/icon_parent_selected.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+} 
+

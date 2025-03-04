@@ -1,0 +1,54 @@
+<view class="feedback-container">
+  <view wx:if="{{loading}}" class="loading">
+    <view class="loading-icon"></view>
+    <text>AI正在分析你的解题思路...</text>
+  </view>
+  
+  <view wx:elif="{{!feedback}}" class="no-feedback">
+    <text>提交解题思路后，AI将在这里给出针对性反馈</text>
+  </view>
+  
+  <view wx:else class="feedback-content">
+    <view class="feedback-header" bindtap="toggleExpand">
+      <view class="feedback-title">AI点评</view>
+      <view class="expand-icon {{expanded ? 'expanded' : ''}}"></view>
+    </view>
+    
+    <view class="feedback-body {{expanded ? 'expanded' : ''}}">
+      <!-- 思路分析 -->
+      <view class="feedback-section">
+        <view class="section-title">思路分析</view>
+        <view class="section-content">{{feedback.thoughtAnalysis}}</view>
+      </view>
+      
+      <!-- 优点 -->
+      <view class="feedback-section">
+        <view class="section-title">解题优点</view>
+        <view class="section-content">
+          <view wx:for="{{feedback.strengths}}" wx:key="index" class="point-item">
+            <view class="point-dot"></view>
+            <view class="point-text">{{item}}</view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 可改进点 -->
+      <view class="feedback-section">
+        <view class="section-title">可改进点</view>
+        <view class="section-content">
+          <view wx:for="{{feedback.improvements}}" wx:key="index" class="point-item">
+            <view class="point-dot"></view>
+            <view class="point-text">{{item}}</view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 解题技巧建议 -->
+      <view class="feedback-section">
+        <view class="section-title">技巧建议</view>
+        <view class="section-content">{{feedback.tips}}</view>
+      </view>
+    </view>
+  </view>
+</view> 
+

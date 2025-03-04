@@ -1,0 +1,55 @@
+<view class="task-list">
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-icon"></view>
+    <text>正在加载任务...</text>
+  </view>
+  
+  <view wx:elif="{{tasks.length === 0}}" class="empty-container">
+    <image class="empty-icon" src="/assets/empty.png" mode="aspectFit"></image>
+    <text class="empty-text">暂无任务记录</text>
+  </view>
+  
+  <block wx:else>
+    <view 
+      wx:for="{{tasks}}" 
+      wx:key="id" 
+      class="task-item"
+      bindtap="onTaskTap"
+      data-id="{{item.id}}">
+      <view class="task-header">
+        <view class="task-title">任务 #{{item.id}}</view>
+        <view class="task-status status-{{item.status}}">{{formatStatus(item.status)}}</view>
+      </view>
+      
+      <view class="task-info">
+        <view class="info-row">
+          <text class="info-label">创建时间：</text>
+          <text class="info-value">{{item.creationTime}}</text>
+        </view>
+        
+        <view class="info-row">
+          <text class="info-label">题目数量：</text>
+          <text class="info-value">{{item.problemCount || 0}}题</text>
+        </view>
+        
+        <view class="info-row">
+          <text class="info-label">完成进度：</text>
+          <view class="progress-bar">
+            <view class="progress-inner" style="width: {{formatCompletion(item)}}"></view>
+          </view>
+          <text class="progress-text">{{formatCompletion(item)}}</text>
+        </view>
+        
+        <view class="info-row">
+          <text class="info-label">用时：</text>
+          <text class="info-value">{{calculateDuration(item)}}</text>
+        </view>
+      </view>
+      
+      <view class="task-footer">
+        <view class="chevron-right"></view>
+      </view>
+    </view>
+  </block>
+</view> 
+

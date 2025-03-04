@@ -1,0 +1,134 @@
+.feedback-container {
+  background-color: white;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  padding: 30rpx;
+  margin: 20rpx 0;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0;
+}
+
+.loading-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #3A86FF;
+  border-radius: 50%;
+  margin-bottom: 20rpx;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-feedback {
+  padding: 40rpx 0;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.feedback-content {
+  width: 100%;
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.feedback-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.expand-icon {
+  width: 30rpx;
+  height: 30rpx;
+  position: relative;
+}
+
+.expand-icon::before,
+.expand-icon::after {
+  content: '';
+  position: absolute;
+  background-color: #999;
+  transition: all 0.3s ease;
+}
+
+.expand-icon::before {
+  width: 100%;
+  height: 4rpx;
+  top: 13rpx;
+  left: 0;
+}
+
+.expand-icon::after {
+  width: 4rpx;
+  height: 100%;
+  left: 13rpx;
+  top: 0;
+}
+
+.expand-icon.expanded::after {
+  transform: rotate(90deg);
+  opacity: 0;
+}
+
+.feedback-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.feedback-body.expanded {
+  max-height: 2000rpx;
+}
+
+.feedback-section {
+  margin: 30rpx 0;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #3A86FF;
+  margin-bottom: 10rpx;
+}
+
+.section-content {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.point-item {
+  display: flex;
+  margin-bottom: 16rpx;
+}
+
+.point-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background-color: #3A86FF;
+  margin-top: 10rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.point-text {
+  flex: 1;
+} 
+

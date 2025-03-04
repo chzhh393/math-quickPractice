@@ -1,0 +1,106 @@
+<view class="container">
+  <view class="header">
+    <view class="back-button" bindtap="backToTaskList">
+      <view class="back-icon">←</view>
+      <view class="back-text">返回</view>
+    </view>
+    <view class="title" wx:if="{{task}}">{{task.title}}</view>
+  </view>
+
+  <view class="main-content">
+    <block wx:if="{{loading}}">
+      <view class="loading">加载中...</view>
+    </block>
+    
+    <block wx:elif="{{errorMessage}}">
+      <view class="error-message">
+        <view class="error-icon">❌</view>
+        <view class="error-text">{{errorMessage}}</view>
+      </view>
+    </block>
+    
+    <block wx:elif="{{task && currentProblem}}">
+      <view class="problem-navigation">
+        <view class="nav-info">
+          <view class="problem-count">题目 {{currentProblemIndex + 1}}/{{Object.keys(task.problems).length}}</view>
+          <view class="task-status {{task.status === '已完成' ? 'completed' : task.status === '进行中' ? 'in-progress' : ''}}">
+            {{task.status}}
+          </view>
+        </view>
+        <view class="nav-buttons">
+          <button class="nav-button" bindtap="prevProblem" disabled="{{currentProblemIndex === 0}}">上一题</button>
+          <button class="nav-button" bindtap="nextProblem" disabled="{{currentProblemIndex === Object.keys(task.problems).length - 1}}">下一题</button>
+        </view>
+      </view>
+
+      <view class="problem-container">
+        <view class="problem-content">
+          <view class="problem-title">题目内容</view>
+          <view class="problem-text">{{currentProblem.content}}</view>
+        </view>
+
+        <!-- 解题思路录制部分 -->
+        <view class="solution-recording-section">
+          <view class="solution-title">解题思路录制</view>
+          <view class="solution-tip">请用语音描述您的解题思路</view>
+          
+          <view class="recording-button-container">
+            <view 
+              class="recording-button {{isRecording ? 'recording' : ''}}" 
+              bindtouchstart="startRecording" 
+              bindtouchend="stopRecording">
+              <view class="recording-button-inner">
+                <view class="mic-icon">
+                  <view class="mic-body"></view>
+                  <view class="mic-base"></view>
+                </view>
+                <view class="recording-text">{{isRecording ? '松开结束' : '按住录音'}}</view>
+              </view>
+              <view class="recording-waves" wx:if="{{isRecording}}">
+                <view class="wave wave1"></view>
+                <view class="wave wave2"></view>
+                <view class="wave wave3"></view>
+              </view>
+              <view class="recording-time" wx:if="{{isRecording}}">{{recordingTime}}s</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 解题思路评估结果 -->
+        <block wx:if="{{showAnswerResult}}">
+          <view class="answer-result {{answerCorrect ? 'correct' : 'incorrect'}}">
+            <view class="result-header">
+              <view class="result-icon">{{answerCorrect ? '✓' : '✗'}}</view>
+              <view class="result-title">{{answerCorrect ? '解题思路正确' : '解题思路有误'}}</view>
+            </view>
+            
+            <view class="result-section">
+              <view class="section-label">识别内容:</view>
+              <view class="section-content">{{voiceAnswerText}}</view>
+            </view>
+            
+            <view class="result-section">
+              <view class="section-label">评价反馈:</view>
+              <view class="section-content">{{answerExplanation}}</view>
+            </view>
+            
+            <block wx:if="{{!answerCorrect && errorType}}">
+              <view class="result-section">
+                <view class="section-label">错误类型:</view>
+                <view class="section-content">{{errorType}}</view>
+              </view>
+            </block>
+            
+            <block wx:if="{{!answerCorrect && specificError}}">
+              <view class="result-section">
+                <view class="section-label">具体错误:</view>
+                <view class="section-content">{{specificError}}</view>
+              </view>
+            </block>
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+</view> 
+

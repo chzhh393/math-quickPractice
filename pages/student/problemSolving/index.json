@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "解题",
+  "usingComponents": {
+    "problem-display": "/components/problemDisplay/index",
+    "voice-recorder": "/components/voiceRecorder/index",
+    "feedback-display": "/components/feedbackDisplay/index"
+  }
+} 
+

@@ -1,0 +1,36 @@
+<view class="problem-card">
+  <view class="problem-header">
+    <view class="problem-number">第{{index + 1}}题</view>
+    <view class="problem-status" wx:if="{{problem.status}}">
+      <text class="status-text {{problem.status === 'completed' ? 'completed' : (problem.status === 'in_progress' ? 'in-progress' : '')}}">
+        {{problem.status === 'completed' ? '已完成' : (problem.status === 'in_progress' ? '进行中' : '未开始')}}
+      </text>
+    </view>
+  </view>
+
+  <view class="problem-content">
+    <view wx:if="{{problem.text}}" class="problem-text">{{problem.text}}</view>
+    
+    <view wx:if="{{problem.imageUrl}}" class="problem-image-container" bindtap="viewFullImage">
+      <image class="problem-image" src="{{problem.imageUrl}}" mode="aspectFit"></image>
+      <view class="view-full-image">点击查看完整题目</view>
+    </view>
+    
+    <view wx:if="{{!problem.text && !problem.imageUrl}}" class="problem-placeholder">
+      题目加载中...
+    </view>
+  </view>
+  
+  <view class="problem-footer">
+    <view class="problem-type" wx:if="{{problem.type}}">
+      题型：{{problem.type}}
+    </view>
+    <view class="difficulty" wx:if="{{problem.difficulty}}">
+      难度：
+      <text class="difficulty-level" wx:for="{{[1, 2, 3, 4, 5]}}" wx:key="index" 
+            style="background-color: {{item <= problem.difficulty ? '#3A86FF' : '#e0e0e0'}};">
+      </text>
+    </view>
+  </view>
+</view> 
+

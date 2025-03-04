@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>创建微信小程序图标</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .preview {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .icon-preview {
+            margin: 10px;
+            text-align: center;
+        }
+        .icon-preview img {
+            border: 1px solid #ddd;
+            padding: 5px;
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <h1>微信小程序图标生成器</h1>
+    <p>点击下面的按钮生成并下载所需的图标文件。</p>
+    
+    <div class="preview">
+        <div class="icon-preview">
+            <p>icon_student.png</p>
+            <img id="icon_student" width="32" height="32">
+        </div>
+        <div class="icon-preview">
+            <p>icon_student_selected.png</p>
+            <img id="icon_student_selected" width="32" height="32">
+        </div>
+        <div class="icon-preview">
+            <p>icon_parent.png</p>
+            <img id="icon_parent" width="32" height="32">
+        </div>
+        <div class="icon-preview">
+            <p>icon_parent_selected.png</p>
+            <img id="icon_parent_selected" width="32" height="32">
+        </div>
+    </div>
+    
+    <button id="generate">生成图标预览</button>
+    <button id="download_all">下载所有图标</button>
+    
+    <h2>使用说明</h2>
+    <ol>
+        <li>点击"生成图标预览"按钮查看图标</li>
+        <li>点击"下载所有图标"按钮下载所有图标</li>
+        <li>将下载的图标文件放入项目的assets目录中</li>
+        <li>确保assets目录位于项目根目录下</li>
+        <li>重新启动微信开发者工具模拟器</li>
+    </ol>
+
+    <script>
+        // 图标的Base64数据
+        const icons = {
+            'icon_student.png': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJDSURBVGiB7Zm/S1tRFMe/5+Y1JiIWOzRUhFIQnDoVpEMXwSJ0EKSr4OQf4NTBycVR6OTgn+DgJji5FKSCdHAodXARQcS0VGqiMa85HfISX/Lue7FvSH3hfKbLvfd8v5x77r0vwHEcJ2lIKoXtdvvYGHMWx/HV3t7eZVmxC1MmWK/XTxuNxhci+gTgJMuybQAvyrQpRWkCjDFnRVEAQAOA9/7aWvumTJtSrJQJRFEUDX4XRbGdpul5mTalKCXAWvvee/9tMOa9/7m+vv6xDJvSKCPTaDQaX4loAyN9kGXZD+/9RRzHH8qwK0Xq7rPWngB4hf/7oABwC+AOQAZgF8Db1Hy5lLkLHQF4jUcBALAK4BWAQwCbZRqWQSzAWnsI4AT5As+iKPpWxK4sYgHe+wsAP/I0RLSVJMmHInZlEQvw3t/kCTDGbG5tbZVyIBahyC50m6fJsuxufX39Kt+mHGIBRPQewEaOZn9nZ+dPEbuyiAUQ0RsAr2doHgBcG2PEOVQGRQRsA3g2YXwP4DLPgIh2kyR5WsCuFGIBRHQE4HDCeNd7/3vWfCL6lKbpdhG7sogFENEugL0p0/dE9HPWfOfcbpIkR0XsyiIWYIw5BnA6YfwXwM9Z8621x0mSvC1iVxaxACJaA/B8wvgOwHWO5jBN0+MidmURCyAiA2ByF7ry3uedjQ7SNBXnUBkUOQsdAHg8C90AuMrRrDnnxDlUBvGHjrX2HYCTMePfRLSfZdltkfhF+AcN7bKBWzSuWQAAAABJRU5ErkJggg==',
+            'icon_student_selected.png': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJDSURBVGiB7Zm/S1tRFMe/5+Y1JiIWOzRUhFIQnDoVpEMXwSJ0EKSr4OQf4NTBycVR6OTgn+DgJji5FKSCdHAodXARQcS0VGqiMa85HfISX/Lue7FvSH3hfKbLvfd8v5x77r0vwHEcJ2lIKoXtdvvYGHMWx/HV3t7eZVmxC1MmWK/XTxuNxhci+gTgJMuybQAvyrQpRWkCjDFnRVEAQAOA9/7aWvumTJtSrJQJRFEUDX4XRbGdpul5mTalKCXAWvvee/9tMOa9/7m+vv6xDJvSKCPTaDQaX4loAyN9kGXZD+/9RRzHH8qwK0Xq7rPWngB4hf/7oABwC+AOQAZgF8Db1Hy5lLkLHQF4jUcBALAK4BWAQwCbZRqWQSzAWnsI4AT5As+iKPpWxK4sYgHe+wsAP/I0RLSVJMmHInZlEQvw3t/kCTDGbG5tbZVyIBahyC50m6fJsuxufX39Kt+mHGIBRPQewEaOZn9nZ+dPEbuyiAUQ0RsAr2doHgBcG2PEOVQGRQRsA3g2YXwP4DLPgIh2kyR5WsCuFGIBRHQE4HDCeNd7/3vWfCL6lKbpdhG7sogFENEugL0p0/dE9HPWfOfcbpIkR0XsyiIWYIw5BnA6YfwXwM9Z8621x0mSvC1iVxaxACJaA/B8wvgOwHWO5jBN0+MidmURCyAiA2ByF7ry3uedjQ7SNBXnUBkUOQsdAHg8C90AuMrRrDnnxDlUBvGHjrX2HYCTMePfRLSfZdltkfhF+AcN7bKBWzSuWQAAAABJRU5ErkJggg==',
+            'icon_parent.png': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJDSURBVGiB7Zm/S1tRFMe/5+Y1JiIWOzRUhFIQnDoVpEMXwSJ0EKSr4OQf4NTBycVR6OTgn+DgJji5FKSCdHAodXARQcS0VGqiMa85HfISX/Lue7FvSH3hfKbLvfd8v5x77r0vwHEcJ2lIKoXtdvvYGHMWx/HV3t7eZVmxC1MmWK/XTxuNxhci+gTgJMuybQAvyrQpRWkCjDFnRVEAQAOA9/7aWvumTJtSrJQJRFEUDX4XRbGdpul5mTalKCXAWvvee/9tMOa9/7m+vv6xDJvSKCPTaDQaX4loAyN9kGXZD+/9RRzHH8qwK0Xq7rPWngB4hf/7oABwC+AOQAZgF8Db1Hy5lLkLHQF4jUcBALAK4BWAQwCbZRqWQSzAWnsI4AT5As+iKPpWxK4sYgHe+wsAP/I0RLSVJMmHInZlEQvw3t/kCTDGbG5tbZVyIBahyC50m6fJsuxufX39Kt+mHGIBRPQewEaOZn9nZ+dPEbuyiAUQ0RsAr2doHgBcG2PEOVQGRQRsA3g2YXwP4DLPgIh2kyR5WsCuFGIBRHQE4HDCeNd7/3vWfCL6lKbpdhG7sogFENEugL0p0/dE9HPWfOfcbpIkR0XsyiIWYIw5BnA6YfwXwM9Z8621x0mSvC1iVxaxACJaA/B8wvgOwHWO5jBN0+MidmURCyAiA2ByF7ry3uedjQ7SNBXnUBkUOQsdAHg8C90AuMrRrDnnxDlUBvGHjrX2HYCTMePfRLSfZdltkfhF+AcN7bKBWzSuWQAAAABJRU5ErkJggg==',
+            'icon_parent_selected.png': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJDSURBVGiB7Zm/S1tRFMe/5+Y1JiIWOzRUhFIQnDoVpEMXwSJ0EKSr4OQf4NTBycVR6OTgn+DgJji5FKSCdHAodXARQcS0VGqiMa85HfISX/Lue7FvSH3hfKbLvfd8v5x77r0vwHEcJ2lIKoXtdvvYGHMWx/HV3t7eZVmxC1MmWK/XTxuNxhci+gTgJMuybQAvyrQpRWkCjDFnRVEAQAOA9/7aWvumTJtSrJQJRFEUDX4XRbGdpul5mTalKCXAWvvee/9tMOa9/7m+vv6xDJvSKCPTaDQaX4loAyN9kGXZD+/9RRzHH8qwK0Xq7rPWngB4hf/7oABwC+AOQAZgF8Db1Hy5lLkLHQF4jUcBALAK4BWAQwCbZRqWQSzAWnsI4AT5As+iKPpWxK4sYgHe+wsAP/I0RLSVJMmHInZlEQvw3t/kCTDGbG5tbZVyIBahyC50m6fJsuxufX39Kt+mHGIBRPQewEaOZn9nZ+dPEbuyiAUQ0RsAr2doHgBcG2PEOVQGRQRsA3g2YXwP4DLPgIh2kyR5WsCuFGIBRHQE4HDCeNd7/3vWfCL6lKbpdhG7sogFENEugL0p0/dE9HPWfOfcbpIkR0XsyiIWYIw5BnA6YfwXwM9Z8621x0mSvC1iVxaxACJaA/B8wvgOwHWO5jBN0+MidmURCyAiA2ByF7ry3uedjQ7SNBXnUBkUOQsdAHg8C90AuMrRrDnnxDlUBvGHjrX2HYCTMePfRLSfZdltkfhF+AcN7bKBWzSuWQAAAABJRU5ErkJggg=='
+        };
+
+        // 显示图标预览
+        document.getElementById('generate').addEventListener('click', function() {
+            for (let filename in icons) {
+                document.getElementById(filename.replace('.png', '')).src = icons[filename];
+            }
+        });
+
+        // 下载所有图标
+        document.getElementById('download_all').addEventListener('click', function() {
+            for (let filename in icons) {
+                const link = document.createElement('a');
+                link.href = icons[filename];
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    </script>
+</body>
+</html> 
+

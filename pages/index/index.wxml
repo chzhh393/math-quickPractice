@@ -1,0 +1,35 @@
+<view class="container">
+  <view class="header">
+    <image class="logo" src="/assets/logo.png" mode="aspectFit"></image>
+    <view class="title">数学走题训练</view>
+    <view class="subtitle">高效刷题，智能反馈</view>
+  </view>
+
+  <view class="user-info" wx:if="{{!hasUserInfo && canIUseGetUserProfile}}">
+    <button class="btn-auth" bindtap="getUserProfile">授权获取头像昵称</button>
+    <view class="auth-tip">授权后可获得更好的使用体验</view>
+  </view>
+
+  <view class="role-selection">
+    <view class="section-title">请选择您的身份</view>
+    
+    <view class="role-buttons">
+      <view class="role-button" bindtap="chooseStudent">
+        <image class="role-icon" src="/assets/student.png" mode="aspectFit"></image>
+        <text class="role-name">我是学生</text>
+        <text class="role-desc">自主学习，提升能力</text>
+      </view>
+      
+      <view class="role-button" bindtap="chooseParent">
+        <image class="role-icon" src="/assets/parent.png" mode="aspectFit"></image>
+        <text class="role-name">我是家长</text>
+        <text class="role-desc">查看学习报告，了解学习情况</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text class="copyright">© 2023 数学走题训练 版权所有</text>
+  </view>
+</view> 
+

@@ -1,0 +1,60 @@
+<view class="container">
+  <view class="header">
+    <view class="title">拍照解题</view>
+    <view class="subtitle">拍摄或上传数学题目，AI将自动识别并创建走题任务</view>
+  </view>
+
+  <view class="main-content">
+    <block wx:if="{{!hasImage}}">
+      <view class="photo-area" bindtap="chooseImage">
+        <view class="photo-placeholder">
+          <view class="icon">📷</view>
+          <view class="text">点击拍照或选择图片</view>
+        </view>
+      </view>
+    </block>
+    
+    <block wx:else>
+      <view class="image-preview">
+        <image src="{{tempImagePath}}" mode="aspectFit"></image>
+        <view class="image-actions">
+          <button class="action-button secondary" bindtap="retakePhoto">重新拍照</button>
+          <button class="action-button primary" bindtap="uploadAndRecognize" loading="{{isUploading}}" disabled="{{isUploading}}">
+            {{isUploading ? '正在识别...' : '开始识别'}}
+          </button>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{showError}}">
+      <view class="error-message">
+        <view class="error-icon">❌</view>
+        <view class="error-text">{{errorMessage}}</view>
+      </view>
+    </block>
+
+    <block wx:if="{{recognizedProblems}}">
+      <view class="result-section">
+        <view class="section-title">识别结果</view>
+        <view class="problems-list">
+          <block wx:for="{{recognizedProblems}}" wx:key="index" wx:for-index="problemIndex" wx:for-item="problem">
+            <view class="problem-item">
+              <view class="problem-number">题目 {{problem.index}}</view>
+              <view class="problem-content">{{problem.content}}</view>
+            </view>
+          </block>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="footer">
+    <view class="tips">
+      <view class="tip-title">拍照小技巧:</view>
+      <view class="tip-item">• 确保光线充足，避免阴影</view>
+      <view class="tip-item">• 保持相机稳定，避免模糊</view>
+      <view class="tip-item">• 确保题目文字清晰可见</view>
+    </view>
+  </view>
+</view> 
+

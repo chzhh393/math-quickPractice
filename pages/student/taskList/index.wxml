@@ -1,0 +1,41 @@
+<view class="container">
+  <view class="header">
+    <view class="title">我的走题任务</view>
+  </view>
+
+  <view class="main-content">
+    <view class="task-list">
+      <block wx:if="{{loading}}">
+        <view class="loading">加载中...</view>
+      </block>
+      
+      <block wx:elif="{{tasks.length > 0}}">
+        <view class="task-item" wx:for="{{tasks}}" wx:key="id" bindtap="viewTaskDetail" data-id="{{item.id}}">
+          <view class="task-info">
+            <view class="task-title">{{item.title}}</view>
+            <view class="task-date">创建日期: {{item.date}}</view>
+          </view>
+          <view class="task-status {{item.status === '已完成' ? 'completed' : item.status === '进行中' ? 'in-progress' : ''}}">
+            {{item.status}}
+          </view>
+        </view>
+      </block>
+      
+      <block wx:else>
+        <view class="no-tasks">
+          <view class="no-tasks-icon">📝</view>
+          <view class="no-tasks-text">暂无走题任务</view>
+          <view class="no-tasks-tip">点击下方按钮创建新任务</view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="create-button" bindtap="createNewTask">
+      <view class="button-icon">+</view>
+      <view class="button-text">拍照创建新任务</view>
+    </button>
+  </view>
+</view> 
+

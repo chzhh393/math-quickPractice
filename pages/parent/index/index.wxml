@@ -1,0 +1,18 @@
+<view class="container">
+  <view class="header">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatarUrl || '/assets/default-avatar.png'}}"></image>
+      <view class="welcome">
+        <text class="greeting">你好，{{userInfo.nickName || '家长'}}</text>
+        <text class="subtitle">查看孩子的学习情况</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="content">
+    <view class="placeholder">
+      <text>家长功能正在开发中，敬请期待...</text>
+    </view>
+  </view>
+</view> 
+

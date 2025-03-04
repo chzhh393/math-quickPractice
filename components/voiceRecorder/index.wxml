@@ -1,0 +1,42 @@
+<view class="voice-recorder">
+  <view class="recording-status">
+    <view class="time">{{isRecording ? formatRecordingTime() : '00:00'}}</view>
+    <view class="status-text">{{isRecording ? '正在录音...' : (tempFilePath ? '录音完成' : '未开始录音')}}</view>
+  </view>
+
+  <view class="action-buttons">
+    <button 
+      class="recorder-btn {{isRecording ? 'recording' : ''}}" 
+      bindtap="toggleRecording">
+      <view class="btn-inner">
+        <view class="record-icon"></view>
+      </view>
+      {{buttonText}}
+    </button>
+
+    <button 
+      class="play-btn {{!tempFilePath ? 'disabled' : ''}}" 
+      bindtap="playRecording" 
+      disabled="{{!tempFilePath}}">
+      <view class="btn-inner">
+        <view class="play-icon"></view>
+      </view>
+      播放录音
+    </button>
+
+    <button 
+      class="submit-btn {{!tempFilePath || isSubmitting ? 'disabled' : ''}}" 
+      bindtap="submitRecording" 
+      disabled="{{!tempFilePath || isSubmitting}}">
+      <view class="btn-inner">
+        <view class="submit-icon"></view>
+      </view>
+      {{isSubmitting ? '提交中...' : '提交录音'}}
+    </button>
+  </view>
+
+  <view class="tips">
+    <text class="tip-text">提示：清晰讲述你的解题思路，AI将为你提供有针对性的反馈</text>
+  </view>
+</view> 
+
