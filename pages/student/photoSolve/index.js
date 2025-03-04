@@ -1,20 +1,95 @@
+// 获取全局app实例
+const app = getApp()
+
+// 定义API配置，优先使用本地配置，如果未定义则尝试从全局获取
 const API_CONFIG = {
   baseUrl: 'https://d.takin.shulie.io',
   apiKey: 'app-eyOgiYZWgmlt0tm0jyT4BiDz',
 }
 
+// 定义全局变量，确保所有函数都能访问
+// 添加错误处理，如果本地变量未定义，尝试从全局获取
+let BASE_URL = API_CONFIG.baseUrl
+let API_KEY = API_CONFIG.apiKey
+
+// 如果本地变量未定义，尝试从全局获取
+if (!BASE_URL && app && app.globalData) {
+  console.log('本地BASE_URL未定义，尝试从全局获取')
+  BASE_URL = app.globalData.BASE_URL
+}
+
+if (!API_KEY && app && app.globalData) {
+  console.log('本地API_KEY未定义，尝试从全局获取')
+  API_KEY = app.globalData.API_KEY
+}
+
+// 确保变量已定义
+if (!BASE_URL) {
+  console.error('警告: BASE_URL未定义，将使用默认值')
+  BASE_URL = 'https://d.takin.shulie.io'
+}
+
+if (!API_KEY) {
+  console.error('警告: API_KEY未定义，将使用默认值')
+  API_KEY = 'app-eyOgiYZWgmlt0tm0jyT4BiDz'
+}
+
+console.log('PhotoSolve页面初始化，使用API配置:', BASE_URL)
+
 Page({
   data: {
     imagePath: '',
     analyzing: false,
-    recognizedProblem: '',
+    recognizedProblems: [],
     analyzeError: '',
     showResult: false
   },
 
   // 返回上一页
   navigateBack: function() {
-    wx.navigateBack()
+    // 获取当前页面栈
+    const pages = getCurrentPages()
+    console.log('当前页面栈:', pages.length)
+    
+    // 如果页面栈只有一个页面，则跳转到首页
+    if (pages.length <= 1) {
+      console.log('当前已是第一个页面，跳转到首页')
+      wx.switchTab({
+        url: '/pages/student/index/index',
+        fail(error) {
+          console.error('跳转到首页失败:', error)
+          // 如果switchTab失败，尝试使用redirectTo
+          wx.redirectTo({
+            url: '/pages/student/index/index',
+            fail(err) {
+              console.error('重定向到首页也失败:', err)
+              wx.showToast({
+                title: '返回失败，请手动返回',
+                icon: 'none'
+              })
+            }
+          })
+        }
+      })
+    } else {
+      // 如果有上一页，则正常返回
+      wx.navigateBack({
+        fail(error) {
+          console.error('返回上一页失败:', error)
+          // 如果navigateBack失败，尝试使用redirectTo
+          wx.redirectTo({
+            url: '/pages/student/index/index',
+            fail(err) {
+              console.error('重定向到首页也失败:', err)
+              wx.showToast({
+                title: '返回失败，请手动返回',
+                icon: 'none'
+              })
+            }
+          })
+        }
+      })
+    }
   },
 
   // 拍照
@@ -53,7 +128,7 @@ Page({
     this.setData({
       imagePath: '',
       analyzing: false,
-      recognizedProblem: '',
+      recognizedProblems: [],
       analyzeError: '',
       showResult: false
     })
@@ -70,14 +145,16 @@ Page({
     }
 
     this.setData({
-      analyzing: true
+      analyzing: true,
+      analyzeError: '',
+      showResult: false
     })
 
     const that = this
     const userId = wx.getStorageSync('userId') || 'guest'
-    const BASE_URL = API_CONFIG.baseUrl
-    const API_KEY = API_CONFIG.apiKey
-
+    
+    console.log('开始上传图片，API配置:', BASE_URL)
+    
     // 上传图片
     wx.uploadFile({
       url: `${BASE_URL}/v1/files/upload`,
@@ -92,14 +169,7 @@ Page({
       },
       success(uploadRes) {
         // 添加详细日志
-        console.log('上传响应状态码:', uploadRes.statusCode)
         console.log('上传响应原始数据:', uploadRes.data)
-        
-        if (uploadRes.statusCode >= 400) {
-          console.error('上传失败，状态码:', uploadRes.statusCode)
-          that.handleError(`上传失败，状态码: ${uploadRes.statusCode}`)
-          return
-        }
         
         try {
           const uploadResult = JSON.parse(uploadRes.data)
@@ -113,7 +183,7 @@ Page({
             that.callChatAPI(fileId)
           } else {
             console.error('响应中没有找到文件ID:', uploadResult)
-            that.handleError('未获取到上传文件ID')
+            throw new Error('未获取到上传文件ID')
           }
         } catch (e) {
           console.error('上传响应解析失败:', e)
@@ -131,15 +201,33 @@ Page({
   // 调用对话 API
   callChatAPI(uploadFileId) {
     const that = this
-    const userId = wx.getStorageSync('userId') || 'guest'
+    const userId = wx.getStorageSync('userId') || this.data.userId || 'guest'
     console.log('开始调用对话API，文件ID:', uploadFileId, '用户ID:', userId)
     
-    // 设置为分析中状态
+    // 设置加载状态
     this.setData({
       analyzing: true,
       analyzeError: ''
     })
     
+    // 准备请求数据 - 确保包含所有必要参数
+    const requestData = {
+      conversation_id: "",  // 拍照识别时使用空字符串创建新的会话
+      user: userId,
+      files: [{
+        type: "image",
+        transfer_method: "local_file",
+        upload_file_id: uploadFileId
+      }],
+      inputs: {
+        // 即使为空也需要包含inputs字段
+      },
+      query: "识别这张数学题目图片的内容"
+    }
+    
+    console.log('发送请求数据:', JSON.stringify(requestData))
+    
+    // 发送API请求
     wx.request({
       url: `${BASE_URL}/v1/chat-messages`,
       method: 'POST',
@@ -147,30 +235,14 @@ Page({
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json'
       },
-      data: {
-        conversation_id: null,  // 使用null而不是空字符串
-        user: userId,
-        files: [{
-          type: "image",
-          transfer_method: "local_file",
-          upload_file_id: uploadFileId
-        }],
-        inputs: {
-          text: "识别这张数学题目图片的内容"  // 将query移到inputs.text中
-        },
-        stream: false  // 添加stream参数，指定不使用流式响应
-      },
+      data: requestData,
       success(chatRes) {
         console.log('对话响应:', chatRes.data)
         
-        if (chatRes.statusCode >= 400) {
-          console.error('API错误:', chatRes.statusCode, chatRes.data)
-          that.setData({
-            analyzing: false,
-            analyzeError: `API错误: ${chatRes.statusCode} - ${JSON.stringify(chatRes.data)}`
-          })
-          return
-        }
+        // 重置分析状态
+        that.setData({
+          analyzing: false
+        })
         
         if (chatRes.data && chatRes.data.answer) {
           try {
@@ -242,58 +314,38 @@ Page({
                 
                 console.log('识别出多个题目:', mergedProblems)
                 
-                // 更新状态，显示识别结果
+                // 更新UI显示所有识别结果
                 that.setData({
-                  analyzing: false,
-                  recognizedProblem: Object.values(mergedProblems)[0]?.content || '未能识别题目内容',
+                  recognizedProblems: Object.values(mergedProblems),
                   showResult: true
                 })
               } else {
-                // 没有找到content字段
-                that.setData({
-                  analyzing: false,
-                  recognizedProblem: '未能识别题目内容',
-                  showResult: true
-                })
+                that.handleError('未能识别题目内容')
               }
-            } else if (typeof problems === 'string') {
-              // 如果是纯文本，直接显示
-              that.setData({
-                analyzing: false,
-                recognizedProblem: problems,
-                showResult: true
-              })
             } else {
+              // 如果是字符串，直接显示为单个题目
               that.setData({
-                analyzing: false,
-                analyzeError: '无法解析识别结果',
-                showResult: false
+                recognizedProblems: typeof problems === 'string' 
+                  ? [{ content: problems, index: '1' }] 
+                  : [],
+                showResult: true
               })
             }
           } catch (e) {
-            console.error('解析识别结果失败:', e)
-            that.setData({
-              analyzing: false,
-              analyzeError: '解析识别结果失败: ' + e.message,
-              showResult: false
-            })
+            console.error('处理识别结果时出错:', e)
+            that.handleError('处理识别结果时出错: ' + e.message)
           }
         } else {
           console.error('响应中没有answer字段:', chatRes.data)
-          that.setData({
-            analyzing: false,
-            analyzeError: '响应中没有识别结果',
-            showResult: false
-          })
+          that.handleError('未获取到识别结果')
         }
       },
       fail(error) {
         console.error('对话请求失败:', error)
         that.setData({
-          analyzing: false,
-          analyzeError: '对话请求失败: ' + error.errMsg,
-          showResult: false
+          analyzing: false
         })
+        that.handleError('识别请求失败: ' + error.errMsg)
       }
     })
   },
@@ -302,10 +354,11 @@ Page({
   handleError(message) {
     console.error(message)
     this.setData({
-      analyzing: false,
       analyzeError: message,
-      showResult: false
+      analyzing: false
     })
+    
+    // 显示错误提示
     wx.showToast({
       title: message,
       icon: 'none',
@@ -313,9 +366,110 @@ Page({
     })
   },
 
+  // 添加备用API调用方法
+  callChatAPIAlternative(uploadFileId) {
+    const that = this
+    const userId = wx.getStorageSync('userId') || this.data.userId || 'guest'
+    console.log('使用备用方法调用对话API，文件ID:', uploadFileId)
+    
+    this.setData({
+      analyzing: true,
+      analyzeError: ''
+    })
+    
+    // 准备备用请求数据 - 确保包含所有必要参数
+    const requestData = {
+      conversation_id: "",  // 拍照识别时使用空字符串创建新的会话
+      user: userId,
+      files: [{
+        type: "image",
+        transfer_method: "local_file",
+        upload_file_id: uploadFileId
+      }],
+      inputs: {
+        // 即使为空也需要包含inputs字段
+      },
+      query: "识别这张数学题目图片的内容"
+    }
+    
+    console.log('备用方法发送请求数据:', JSON.stringify(requestData))
+    
+    wx.request({
+      url: `${BASE_URL}/v1/chat-messages`,
+      method: 'POST',
+      header: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      data: requestData,
+      success(chatRes) {
+        console.log('备用方法对话响应:', chatRes.data)
+        
+        that.setData({
+          analyzing: false
+        })
+        
+        if (chatRes.data && chatRes.data.answer) {
+          // 处理响应...与原方法相同
+          try {
+            let problems = chatRes.data.answer
+            console.log('原始answer内容:', problems)
+            
+            // 简化处理逻辑，直接提取文本
+            if (typeof problems === 'string') {
+              // 清理文本
+              problems = problems.replace(/\\n/g, '\n').replace(/\\r/g, '')
+            } else if (typeof problems === 'object') {
+              problems = JSON.stringify(problems)
+            }
+            
+            // 更新UI显示识别结果
+            that.setData({
+              recognizedProblems: typeof problems === 'string' 
+                ? [{ content: problems, index: '1' }] 
+                : [],
+              showResult: true
+            })
+          } catch (e) {
+            console.error('处理识别结果时出错:', e)
+            that.handleError('处理识别结果时出错: ' + e.message)
+          }
+        } else {
+          console.error('响应中没有answer字段:', chatRes.data)
+          that.handleError('未获取到识别结果')
+        }
+      },
+      fail(error) {
+        console.error('备用方法对话请求失败:', error)
+        that.setData({
+          analyzing: false
+        })
+        
+        // 如果备用方法也失败，提供更详细的错误信息
+        if (error.statusCode === 400) {
+          console.log('尝试解析错误响应:', error.data)
+          let errorMsg = '请求格式错误'
+          try {
+            if (typeof error.data === 'string') {
+              const errorData = JSON.parse(error.data)
+              errorMsg = errorData.message || errorData.error || errorMsg
+            } else if (error.data && error.data.message) {
+              errorMsg = error.data.message
+            }
+          } catch (e) {
+            console.error('解析错误响应失败:', e)
+          }
+          that.handleError('识别请求失败: ' + errorMsg)
+        } else {
+          that.handleError('识别请求失败: ' + error.errMsg)
+        }
+      }
+    })
+  },
+
   // 创建任务
   createTask: function() {
-    if (!this.data.recognizedProblem) {
+    if (!this.data.recognizedProblems || this.data.recognizedProblems.length === 0) {
       wx.showToast({
         title: '请先识别题目',
         icon: 'none'
@@ -329,19 +483,23 @@ Page({
     // 生成新任务ID
     const newTaskId = Date.now().toString()
     
+    // 创建题目对象
+    const problems = {}
+    this.data.recognizedProblems.forEach((problem, index) => {
+      problems[`problem${index + 1}`] = {
+        content: problem.content,
+        answered: false
+      }
+    })
+    
     // 创建新任务
     const newTask = {
       id: newTaskId,
-      title: '拍照解题任务',
+      title: `拍照解题任务 (${this.data.recognizedProblems.length}题)`,
       createdAt: new Date().toISOString(),
       dueDate: this.formatDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)), // 默认7天后截止
       status: '未开始',
-      problems: {
-        problem1: {
-          content: this.data.recognizedProblem,
-          answered: false
-        }
-      }
+      problems: problems
     }
     
     // 添加到任务列表

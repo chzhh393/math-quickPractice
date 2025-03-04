@@ -1,52 +1,61 @@
 <view class="container">
   <view class="header">
     <view class="back-button" bindtap="navigateBack">
-      <view class="back-icon">←</view>
-      <view class="back-text">返回</view>
+      <text>返回</text>
     </view>
     <view class="title">拍照解题</view>
   </view>
 
   <view class="main-content">
     <!-- 拍照区域 -->
-    <view class="camera-section" wx:if="{{!imagePath && !analyzing}}">
-      <view class="camera-tip">请拍摄或上传数学题目</view>
+    <view class="camera-section" wx:if="{{!imagePath}}">
+      <view class="camera-tip">拍摄或选择一张包含数学题目的图片</view>
       <view class="camera-actions">
-        <button class="action-button" bindtap="takePhoto">
-          <view class="button-icon">📷</view>
-          <view class="button-text">拍照</view>
-        </button>
-        <button class="action-button" bindtap="chooseImage">
-          <view class="button-icon">🖼️</view>
-          <view class="button-text">从相册选择</view>
-        </button>
+        <button class="action-button" bindtap="takePhoto">拍照</button>
+        <button class="action-button" bindtap="chooseImage">从相册选择</button>
       </view>
     </view>
 
     <!-- 图片预览区域 -->
-    <view class="preview-section" wx:if="{{imagePath && !analyzing}}">
+    <view class="preview-section" wx:elif="{{imagePath && !analyzing && !showResult}}">
       <image class="preview-image" src="{{imagePath}}" mode="aspectFit"></image>
       <view class="preview-actions">
-        <button class="secondary-button" bindtap="cancelImage">重新选择</button>
-        <button class="primary-button" bindtap="analyzeImage">开始识别</button>
+        <button class="action-button" bindtap="cancelImage">重新选择</button>
+        <button class="action-button primary" bindtap="analyzeImage">开始识别</button>
       </view>
     </view>
 
     <!-- 分析中状态 -->
-    <view class="analyzing-section" wx:if="{{analyzing}}">
-      <view class="loading-icon"></view>
-      <view class="analyzing-text">正在识别题目...</view>
+    <view class="analyzing-section" wx:elif="{{analyzing}}">
+      <view class="loading-spinner"></view>
+      <view class="analyzing-text">正在识别题目，请稍候...</view>
     </view>
 
     <!-- 识别结果 -->
-    <view class="result-section" wx:if="{{recognizedProblem}}">
-      <view class="section-title">识别结果</view>
-      <view class="problem-content">{{recognizedProblem}}</view>
+    <view class="result-section" wx:elif="{{showResult}}">
+      <view class="result-header">
+        <text class="result-title">识别结果</text>
+        <text class="result-count">共识别出 {{recognizedProblems.length}} 道题目</text>
+      </view>
+      
+      <scroll-view scroll-y="true" class="problems-list">
+        <block wx:for="{{recognizedProblems}}" wx:key="index">
+          <view class="problem-item">
+            <view class="problem-index">题目 {{item.index}}</view>
+            <view class="problem-content">{{item.content}}</view>
+          </view>
+        </block>
+      </scroll-view>
       
       <view class="result-actions">
-        <button class="secondary-button" bindtap="cancelImage">重新拍照</button>
-        <button class="primary-button" bindtap="createTask">创建任务</button>
+        <button class="action-button" bindtap="cancelImage">重新拍照</button>
+        <button class="action-button primary" bindtap="createTask">创建任务</button>
       </view>
+    </view>
+
+    <!-- 错误部分 -->
+    <view class="error-section" wx:if="{{analyzeError}}">
+      <view class="error-message">{{analyzeError}}</view>
     </view>
   </view>
 </view> 
