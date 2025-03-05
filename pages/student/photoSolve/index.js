@@ -250,41 +250,105 @@ Page({
             let problems = chatRes.data.answer
             console.log('原始answer内容:', problems)
             
+            // 处理特殊格式的返回数据
             if (typeof problems === 'string') {
-              try {
-                // 先尝试直接解析
-                problems = JSON.parse(problems)
-              } catch (e) {
-                console.log('直接解析失败，尝试清理字符串')
-                // 移除可能的外层引号和转义字符
-                problems = problems.replace(/\\"/g, '"')
-                  .replace(/。}/g, '}')
-                  .replace(/。"/g, '"')
-                  .replace(/[，。](?=\s*["}])/g, '')
-                if (problems.startsWith('"') && problems.endsWith('"')) {
-                  problems = problems.slice(1, -1)
-                }
-                console.log('处理后的字符串:', problems)
-                try {
-                  problems = JSON.parse(problems)
-                } catch (err) {
-                  // 如果还是解析失败，尝试提取内容
-                  console.log('JSON解析失败，尝试提取内容')
-                  // 尝试匹配所有 content 字段
-                  const contentMatches = problems.match(/content\d+["']?\s*:\s*["']([^"']+)["']/g)
-                  if (contentMatches) {
-                    problems = {}
-                    contentMatches.forEach((match, index) => {
-                      const content = match.match(/:\s*["']([^"']+)["']/)[1]
-                      problems[`content${index + 1}`] = content
-                    })
-                  } else {
-                    // 如果没有找到 content，直接使用整个文本
-                    problems = {
-                      content1: problems.replace(/['"{}]/g, '').trim()
+              // 检查是否包含多个content标记
+              if (problems.includes('"content1"') || problems.includes('"content2"')) {
+                console.log('检测到特殊格式的多题目数据')
+                
+                // 尝试提取所有content
+                const contentMatches = problems.match(/"content\d+"[,:]?\s*"([^"]+)"/g)
+                if (contentMatches && contentMatches.length > 0) {
+                  console.log('找到内容匹配:', contentMatches)
+                  
+                  const extractedProblems = {}
+                  contentMatches.forEach((match, index) => {
+                    // 提取content键和值
+                    const contentKeyMatch = match.match(/"(content\d+)"/)
+                    const contentKey = contentKeyMatch ? contentKeyMatch[1] : `content${index + 1}`
+                    
+                    // 提取内容值
+                    const contentValueMatch = match.match(/"content\d+"[,:]?\s*"([^"]+)"/)
+                    const contentValue = contentValueMatch ? contentValueMatch[1] : ''
+                    
+                    if (contentValue) {
+                      extractedProblems[contentKey] = contentValue.replace(/\\n/g, '\n')
+                    }
+                  })
+                  
+                  console.log('提取的多个题目:', extractedProblems)
+                  problems = extractedProblems
+                } else {
+                  // 如果匹配失败，尝试其他方法
+                  try {
+                    // 尝试将字符串转换为有效的JSON
+                    const cleanedStr = problems
+                      .replace(/\\"/g, '"')
+                      .replace(/"\s*,\s*"/g, '","')
+                      .replace(/"\s*;\s*\n+\s*"/g, '","')
+                    
+                    // 构建一个有效的JSON对象字符串
+                    const jsonStr = `{${cleanedStr.replace(/^"/, '"').replace(/";$/, '"')}}`;
+                    console.log('尝试解析为JSON:', jsonStr)
+                    
+                    problems = JSON.parse(jsonStr)
+                    console.log('JSON解析成功:', problems)
+                  } catch (e) {
+                    console.error('JSON解析失败:', e)
+                    
+                    // 如果JSON解析失败，使用正则表达式提取
+                    const contentPairs = problems.split(/;\s*\n+\s*/)
+                    if (contentPairs.length > 1) {
+                      problems = {}
+                      contentPairs.forEach((pair, index) => {
+                        const parts = pair.split(',')
+                        if (parts.length >= 2) {
+                          const key = parts[0].replace(/"/g, '').trim()
+                          const value = parts[1].replace(/"/g, '').trim()
+                          problems[key] = value
+                        } else {
+                          problems[`content${index + 1}`] = pair.replace(/"/g, '').trim()
+                        }
+                      })
                     }
                   }
-                  console.log('提取的内容:', problems)
+                }
+              } else {
+                try {
+                  // 先尝试直接解析
+                  problems = JSON.parse(problems)
+                } catch (e) {
+                  console.log('直接解析失败，尝试清理字符串')
+                  // 移除可能的外层引号和转义字符
+                  problems = problems.replace(/\\"/g, '"')
+                    .replace(/。}/g, '}')
+                    .replace(/。"/g, '"')
+                    .replace(/[，。](?=\s*["}])/g, '')
+                  if (problems.startsWith('"') && problems.endsWith('"')) {
+                    problems = problems.slice(1, -1)
+                  }
+                  console.log('处理后的字符串:', problems)
+                  try {
+                    problems = JSON.parse(problems)
+                  } catch (err) {
+                    // 如果还是解析失败，尝试提取内容
+                    console.log('JSON解析失败，尝试提取内容')
+                    // 尝试匹配所有 content 字段
+                    const contentMatches = problems.match(/content\d+["']?\s*:\s*["']([^"']+)["']/g)
+                    if (contentMatches) {
+                      problems = {}
+                      contentMatches.forEach((match, index) => {
+                        const content = match.match(/:\s*["']([^"']+)["']/)[1]
+                        problems[`content${index + 1}`] = content
+                      })
+                    } else {
+                      // 如果没有找到 content，直接使用整个文本
+                      problems = {
+                        content1: problems.replace(/['"{}]/g, '').trim()
+                      }
+                    }
+                    console.log('提取的内容:', problems)
+                  }
                 }
               }
             }
@@ -410,24 +474,84 @@ Page({
         })
         
         if (chatRes.data && chatRes.data.answer) {
-          // 处理响应...与原方法相同
           try {
             let problems = chatRes.data.answer
             console.log('原始answer内容:', problems)
             
-            // 简化处理逻辑，直接提取文本
+            // 处理特殊格式的返回数据
             if (typeof problems === 'string') {
-              // 清理文本
+              // 检查是否包含多个content标记
+              if (problems.includes('"content1"') || problems.includes('"content2"')) {
+                console.log('备用方法检测到特殊格式的多题目数据')
+                
+                // 尝试提取所有content
+                const contentMatches = problems.match(/"content\d+"[,:]?\s*"([^"]+)"/g)
+                if (contentMatches && contentMatches.length > 0) {
+                  console.log('备用方法找到内容匹配:', contentMatches)
+                  
+                  const extractedProblems = {}
+                  contentMatches.forEach((match, index) => {
+                    // 提取content键和值
+                    const contentKeyMatch = match.match(/"(content\d+)"/)
+                    const contentKey = contentKeyMatch ? contentKeyMatch[1] : `content${index + 1}`
+                    
+                    // 提取内容值
+                    const contentValueMatch = match.match(/"content\d+"[,:]?\s*"([^"]+)"/)
+                    const contentValue = contentValueMatch ? contentValueMatch[1] : ''
+                    
+                    if (contentValue) {
+                      extractedProblems[contentKey] = contentValue.replace(/\\n/g, '\n')
+                    }
+                  })
+                  
+                  console.log('备用方法提取的多个题目:', extractedProblems)
+                  
+                  // 转换为数组格式
+                  const problemsArray = Object.keys(extractedProblems).map(key => {
+                    return {
+                      content: extractedProblems[key],
+                      index: key.replace('content', '')
+                    }
+                  })
+                  
+                  // 更新UI显示所有识别结果
+                  that.setData({
+                    recognizedProblems: problemsArray,
+                    showResult: true
+                  })
+                  return
+                }
+              }
+              
+              // 如果没有检测到特殊格式，使用简单处理
               problems = problems.replace(/\\n/g, '\n').replace(/\\r/g, '')
             } else if (typeof problems === 'object') {
-              problems = JSON.stringify(problems)
+              // 如果是对象，检查是否有content字段
+              const contentKeys = Object.keys(problems).filter(key => key.startsWith('content'))
+              if (contentKeys.length > 0) {
+                const problemsArray = contentKeys.map(key => {
+                  return {
+                    content: problems[key].replace(/\\n/g, '\n').replace(/\\r/g, ''),
+                    index: key.replace('content', '')
+                  }
+                })
+                
+                that.setData({
+                  recognizedProblems: problemsArray,
+                  showResult: true
+                })
+                return
+              } else {
+                problems = JSON.stringify(problems)
+              }
             }
             
-            // 更新UI显示识别结果
+            // 如果上面的处理都没有返回，则作为单个题目处理
             that.setData({
-              recognizedProblems: typeof problems === 'string' 
-                ? [{ content: problems, index: '1' }] 
-                : [],
+              recognizedProblems: [{ 
+                content: typeof problems === 'string' ? problems : JSON.stringify(problems), 
+                index: '1' 
+              }],
               showResult: true
             })
           } catch (e) {

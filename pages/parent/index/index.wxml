@@ -1,18 +1,72 @@
 <view class="container">
   <view class="header">
-    <view class="user-info">
-      <image class="avatar" src="{{userInfo.avatarUrl || '/assets/default-avatar.png'}}"></image>
-      <view class="welcome">
-        <text class="greeting">你好，{{userInfo.nickName || '家长'}}</text>
-        <text class="subtitle">查看孩子的学习情况</text>
-      </view>
+    <view class="avatar-container">
+      <image class="avatar" src="/assets/parent_avatar.png" mode="aspectFill"></image>
+    </view>
+    <view class="greeting">
+      <view class="greeting-text">你好，家长</view>
+      <view class="greeting-subtext">查看孩子的学习情况</view>
     </view>
   </view>
 
-  <view class="content">
-    <view class="placeholder">
-      <text>家长功能正在开发中，敬请期待...</text>
-    </view>
+  <view class="main-content">
+    <view class="section-title">学习任务</view>
+    
+    <block wx:if="{{loading}}">
+      <view class="loading">加载中...</view>
+    </block>
+    
+    <block wx:elif="{{errorMessage}}">
+      <view class="error-message">
+        <view class="error-icon">❌</view>
+        <view class="error-text">{{errorMessage}}</view>
+      </view>
+    </block>
+    
+    <block wx:elif="{{tasks && tasks.length > 0}}">
+      <view class="tasks-list">
+        <block wx:for="{{tasks}}" wx:key="id">
+          <view class="task-card" bindtap="viewTaskReport" data-task-id="{{item.id}}">
+            <view class="task-header">
+              <view class="task-title">{{item.title}}</view>
+              <view class="task-status {{item.status === '已完成' ? 'completed' : item.status === '进行中' ? 'in-progress' : ''}}">
+                {{item.status}}
+              </view>
+            </view>
+            
+            <view class="task-info">
+              <view class="task-problems">
+                <text class="info-label">题目数量:</text>
+                <text class="info-value">{{item.problemCount}}</text>
+              </view>
+              <view class="task-date">
+                <text class="info-label">创建时间:</text>
+                <text class="info-value">{{formatTime(item.createTime)}}</text>
+              </view>
+            </view>
+            
+            <view class="task-progress">
+              <view class="progress-bar">
+                <view class="progress-fill" style="width: {{item.progress}}%;"></view>
+              </view>
+              <view class="progress-text">完成进度: {{item.progress}}%</view>
+            </view>
+            
+            <view class="task-action">
+              <view class="action-button">查看报告</view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </block>
+    
+    <block wx:else>
+      <view class="empty-tasks">
+        <view class="empty-icon">📚</view>
+        <view class="empty-text">暂无学习任务</view>
+        <view class="empty-subtext">孩子完成任务后将在这里显示</view>
+      </view>
+    </block>
   </view>
 </view> 
 

@@ -2,9 +2,12 @@
   "pages": [
     "pages/student/index/index",
     "pages/student/photoSolve/index",
+    "pages/student/importProblem/index",
     "pages/student/problemSolving/index",
     "pages/parent/index/index",
-    "pages/parent/taskDetails/index"
+    "pages/parent/taskDetails/index",
+    "pages/parent/answerHistory/index",
+    "pages/parent/taskReport/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

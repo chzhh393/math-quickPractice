@@ -1,52 +1,90 @@
 <view class="container">
   <view class="header">
-    <view class="avatar">
-      <image class="avatar-img" src="/assets/default_avatar.png" mode="aspectFill"></image>
+    <view class="user-info">
+      <view class="avatar-container">
+        <block wx:if="{{canIUseOpenData}}">
+          <view class="avatar">
+            <open-data type="userAvatarUrl"></open-data>
+          </view>
+          <open-data type="userNickName"></open-data>
+        </block>
+        <block wx:elif="{{!hasUserInfo}}">
+          <button wx:if="{{canIUseGetUserProfile}}" bindtap="getUserProfile" class="avatar-button"> 获取头像昵称 </button>
+          <button wx:elif="{{canIUse}}" open-type="getUserInfo" bindgetuserinfo="getUserInfo" class="avatar-button"> 获取头像昵称 </button>
+          <view wx:else> 请使用1.4.4及以上版本基础库 </view>
+        </block>
+        <block wx:else>
+          <image class="avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
+          <text class="nickname">{{userInfo.nickName}}</text>
+        </block>
+      </view>
     </view>
-    <view class="welcome-text">
-      <view class="welcome">欢迎使用数学走题训练</view>
-      <view class="user-name" wx:if="{{userName}}">{{userName}}</view>
+    <view class="stats-summary">
+      <view class="stat-item">
+        <text class="stat-value">{{stats.total}}</text>
+        <text class="stat-label">总任务</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.completed}}</text>
+        <text class="stat-label">已完成</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.inProgress}}</text>
+        <text class="stat-label">进行中</text>
+      </view>
     </view>
   </view>
 
-  <!-- 拍照解题功能 -->
-  <view class="feature-card" bindtap="navigateToPhotoSolve">
-    <view class="feature-icon">
-      <image src="/assets/icon_camera.png" mode="aspectFit"></image>
+  <view class="actions">
+    <view class="action-button" bindtap="navigateToRecognition">
+      <image class="action-icon" src="/assets/icons/camera.png" mode="aspectFit"></image>
+      <text>识别题目</text>
     </view>
-    <view class="feature-text">拍照解题</view>
+    <view class="action-button" bindtap="navigateToImport">
+      <image class="action-icon" src="/assets/icons/import.png" mode="aspectFit"></image>
+      <text>导入题目</text>
+    </view>
+    <view class="action-button" bindtap="navigateToStats">
+      <image class="action-icon" src="/assets/icons/stats.png" mode="aspectFit"></image>
+      <text>学习统计</text>
+    </view>
   </view>
 
-  <!-- 最近任务列表 -->
-  <view class="recent-tasks">
-    <view class="section-title">最近任务</view>
-    
-    <view class="task-list">
+  <view class="tasks-container">
+    <view class="tasks-header">
+      <text class="section-title">我的任务</text>
+      <view class="refresh-button" bindtap="refreshTasks">
+        <image class="refresh-icon" src="/assets/icons/refresh.png" mode="aspectFit"></image>
+        <text>刷新</text>
+      </view>
+    </view>
+
+    <view class="tasks-list">
       <block wx:if="{{loading}}">
-        <view class="loading">加载中...</view>
-      </block>
-      
-      <block wx:elif="{{tasks.length === 0}}">
-        <view class="empty-state">
-          <view class="empty-icon">📝</view>
-          <view class="empty-text">暂无任务</view>
-          <view class="empty-hint">拍照解题后会自动创建任务</view>
+        <view class="loading-container">
+          <view class="loading-spinner"></view>
+          <text>加载中...</text>
         </view>
       </block>
-      
+      <block wx:elif="{{tasks.length === 0}}">
+        <view class="empty-state">
+          <image class="empty-icon" src="/assets/icons/empty.png" mode="aspectFit"></image>
+          <text>暂无任务，点击"识别题目"开始学习</text>
+        </view>
+      </block>
       <block wx:else>
-        <view 
-          class="task-item" 
-          wx:for="{{tasks}}" 
-          wx:key="id" 
-          bindtap="navigateToTask" 
-          data-task-id="{{item.id}}">
+        <view class="task-item" wx:for="{{tasks}}" wx:key="_id" bindtap="openTask" data-id="{{item._id}}">
           <view class="task-info">
-            <view class="task-title">{{item.title}}</view>
-            <view class="task-date">截止日期: {{item.dueDate}}</view>
+            <view class="task-title">{{item.title || '未命名任务'}}</view>
+            <view class="task-meta">
+              <text class="task-date">{{item.created_at ? item.created_at.substring(0, 10) : '未知日期'}}</text>
+              <text class="task-status {{item.status === '已完成' ? 'completed' : 'in-progress'}}">{{item.status || '进行中'}}</text>
+            </view>
           </view>
-          <view class="task-status {{item.status === '已完成' ? 'completed' : item.status === '进行中' ? 'in-progress' : ''}}">
-            {{item.status}}
+          <view class="task-actions">
+            <view class="delete-button" catchtap="deleteTask" data-id="{{item._id}}">
+              <image class="delete-icon" src="/assets/icons/delete.png" mode="aspectFit"></image>
+            </view>
           </view>
         </view>
       </block>

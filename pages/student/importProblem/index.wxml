@@ -1,0 +1,60 @@
+<view class="container">
+  <view class="header">
+    <view class="back-button" bindtap="navigateBack">返回</view>
+    <view class="title">导入题目</view>
+  </view>
+  
+  <view class="content">
+    <view class="instruction">
+      <text>请粘贴JSON格式的题目内容，格式如下：</text>
+      <text class="code-example">{"content1": "题目1内容", "content2": "题目2内容"}</text>
+    </view>
+    
+    <!-- 编辑模式 -->
+    <block wx:if="{{!showPreview}}">
+      <view class="input-area">
+        <textarea 
+          class="json-input" 
+          placeholder="在此粘贴JSON内容..." 
+          value="{{jsonContent}}" 
+          bindinput="onJsonInput"
+          bindinputchange="bindInputChange"
+          auto-height="true"
+          maxlength="-1"
+          style="min-height: 200px;"
+        ></textarea>
+        
+        <view class="error-message" wx:if="{{parseError}}">{{parseError}}</view>
+        
+        <view class="button-group">
+          <button class="btn btn-clear" bindtap="clearInput">清空</button>
+          <button class="btn btn-example" bindtap="pasteExample">粘贴示例</button>
+          <button class="btn btn-parse" bindtap="parseJson">解析预览</button>
+        </view>
+      </view>
+    </block>
+    
+    <!-- 预览模式 -->
+    <block wx:else>
+      <view class="preview-area">
+        <view class="preview-header">
+          <text class="preview-title">题目预览</text>
+          <text class="preview-count">共 {{parsedProblems.length}} 道题目</text>
+        </view>
+        
+        <scroll-view class="problems-list" scroll-y="true">
+          <view class="problem-item" wx:for="{{parsedProblems}}" wx:key="index">
+            <view class="problem-header">题目 {{item.index}}</view>
+            <view class="problem-content">{{item.content}}</view>
+          </view>
+        </scroll-view>
+        
+        <view class="button-group">
+          <button class="btn btn-back" bindtap="backToEdit">返回编辑</button>
+          <button class="btn btn-create" bindtap="createTask">创建任务</button>
+        </view>
+      </view>
+    </block>
+  </view>
+</view> 
+

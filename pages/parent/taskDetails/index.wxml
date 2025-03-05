@@ -2,5 +2,9 @@
   <view class="placeholder">
     <text>任务详情功能正在开发中，敬请期待...</text>
   </view>
+  <view class="task-actions">
+    <button class="action-button" bindtap="viewTaskReport">查看任务报告</button>
+    <!-- 保留其他可能存在的按钮 -->
+  </view>
 </view> 
 

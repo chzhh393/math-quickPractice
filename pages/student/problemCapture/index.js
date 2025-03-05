@@ -251,35 +251,62 @@ Page({
     const now = new Date()
     const taskTitle = `数学走题 ${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours()}:${now.getMinutes()}`
     
-    // 这里可以调用创建任务的API，或者先保存到本地
-    // 简单示例：保存到本地存储
-    const tasks = wx.getStorageSync('mathTasks') || []
-    const newTask = {
-      id: Date.now().toString(),
+    // 不再保存到本地存储，而是保存到数据库
+    const app = getApp()
+    const that = this
+    
+    // 准备识别数据
+    const recognizedData = {
       title: taskTitle,
-      date: `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`,
-      status: '未开始',
-      problems: problems,
-      conversationId: conversationId,
-      createdAt: now.toISOString()
+      problems: Object.values(problems).map(problem => {
+        return {
+          problem_key: problem.index,
+          content: problem.content,
+          answered: false,
+          problem_type: 'text',
+          options: [],
+          correct_answer: '',
+          answer_records: []
+        }
+      })
     }
     
-    tasks.unshift(newTask)
-    wx.setStorageSync('mathTasks', tasks)
+    console.log('准备保存的识别数据:', recognizedData)
     
-    // 显示成功提示
-    wx.showToast({
-      title: '走题任务已创建',
-      icon: 'success',
-      duration: 2000,
-      success: () => {
-        // 延迟导航到任务列表
-        setTimeout(() => {
-          wx.navigateTo({
-            url: '../taskList/index'
-          })
-        }, 2000)
+    // 调用app.js中的saveRecognizedProblems函数保存到数据库
+    app.saveRecognizedProblems(recognizedData).then(result => {
+      console.log('保存识别题目结果:', result)
+      
+      if (result.success) {
+        // 显示成功提示
+        wx.showToast({
+          title: '走题任务已创建',
+          icon: 'success',
+          duration: 2000,
+          success: () => {
+            // 延迟导航到任务列表
+            setTimeout(() => {
+              wx.navigateTo({
+                url: '../taskList/index'
+              })
+            }, 2000)
+          }
+        })
+      } else {
+        // 显示错误提示
+        wx.showToast({
+          title: '创建任务失败: ' + (result.error || '未知错误'),
+          icon: 'none',
+          duration: 3000
+        })
       }
+    }).catch(error => {
+      console.error('保存识别题目出错:', error)
+      wx.showToast({
+        title: '创建任务出错',
+        icon: 'none',
+        duration: 3000
+      })
     })
   },
 
@@ -310,4 +337,41 @@ Page({
     })
   }
 }) 
+
+const app = getApp();
+const answerData = {
+  problem_id: '问题ID',
+  task_id: '任务ID',
+  student_answer: '学生的回答',
+  ai_response: 'AI的反馈',
+  is_correct: true,
+  duration: 30 // 答题耗时30秒
+};
+app.saveAnswerRecord(answerData).then(result => {
+  if (result.success) {
+    console.log('答题记录保存成功，ID:', result.recordId);
+  }
+}); 
+
+const answerRecord = {
+  studentAnswer: '学生的回答',
+  aiResponse: 'AI的反馈',
+  isCorrect: true,
+  duration: 30
+};
+app.updateProblemAnswerStatus(problemId, true, answerRecord).then(result => {
+  if (result.success) {
+    console.log('问题状态更新成功，答题记录ID:', result.recordId);
+  }
+}); 
+
+app.getProblemAnswerRecords(problemId).then(result => {
+  if (result.success) {
+    const records = result.records;
+    // 使用答题记录更新页面
+    this.setData({
+      answerRecords: records
+    });
+  }
+}); 
 
