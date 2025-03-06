@@ -356,301 +356,175 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
 
     // 保存单个问题到数据库
     async function saveProblemToDatabase(problemData, taskId) {
+      if (!problemData) {
+        console.error('保存问题失败: 问题数据为空');
+        return { success: false, error: '问题数据为空' };
+      }
+      
+      if (!taskId) {
+        console.error('保存问题失败: 未提供任务ID');
+        return { success: false, error: '未提供任务ID' };
+      }
+      
+      console.log('保存问题到数据库，problem_key:', problemData.problem_key, 'taskId:', taskId);
+      
       try {
-        // 检查必要的问题信息
-        if (!problemData || !problemData.problem_key) {
-          console.error('无效的问题数据，无法保存');
-          return { success: false, error: '无效的问题数据' };
-        }
-        
-        if (!taskId) {
-          console.error('未提供任务ID，无法保存问题数据');
-          return { success: false, error: '未提供任务ID' };
-        }
-        
-        // 确保taskId是字符串类型
-        taskId = String(taskId);
-        console.log('保存单个问题，任务ID类型:', typeof taskId, '值:', taskId);
-        
-        // 准备问题数据
-        const problemToSave = {
-          answered: problemData.answered || false,
-          task_id: taskId, // 使用字符串格式，而不是对象
-          content: problemData.content || '',
-          undefined_nwerz: {}, // 根据API要求
-          problem_key: problemData.problem_key,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          answer_records: JSON.stringify(problemData.answer_records || []), // 将答题记录转为字符串存储
-          options: JSON.stringify(problemData.options || []), // 将选项转为字符串存储
-          correct_answer: problemData.correct_answer || '',
-          problem_type: problemData.problem_type || 'text', // 问题类型：text, choice, etc.
-        };
-        
-        console.log('准备保存的问题数据:', problemToSave);
-        console.log('问题的task_id:', JSON.stringify(problemToSave.task_id));
-        
-        try {
-          // 获取所有问题，然后在客户端过滤
-          const { data } = await models.ai_problems.list({
-            pageSize: 1000, // 获取足够多的问题
-            pageNumber: 1,
+        // 检查是否已存在相同problem_key的问题
+        if (problemData.problem_key) {
+          const existingProblemsResult = await models.ai_problems.list({
+            filter: { 
+              problem_key: problemData.problem_key,
+              task_id: taskId
+            }
           });
           
-          // 在客户端过滤出与当前任务和问题键相关的问题
-          let existingProblem = null;
-          if (data && data.records) {
-            const matchingProblems = data.records.filter(problem => {
-              return problem.task_id === taskId && 
-                     problem.problem_key === problemData.problem_key;
-            });
-            
-            if (matchingProblems.length > 0) {
-              existingProblem = matchingProblems[0];
-            }
+          let existingProblems = [];
+          if (existingProblemsResult && existingProblemsResult.data) {
+            existingProblems = Array.isArray(existingProblemsResult.data) ? 
+                              existingProblemsResult.data : 
+                              (existingProblemsResult.data.records || []);
           }
           
-          if (existingProblem) {
-            // 问题已存在，更新问题
-            console.log('问题已存在，ID:', existingProblem._id, '，进行更新');
-            
-            const { data: updateResult } = await models.ai_problems.update({
-              data: problemToSave,
-              filter: {
-                where: {
-                  $and: [
-                    {
-                      _id: {
-                        $eq: existingProblem._id,
-                      },
-                    },
-                  ]
-                }
-              },
-            });
-            
-            console.log('问题更新成功:', updateResult);
-            return { success: true, problemId: existingProblem._id, updated: true };
-          } else {
-            // 问题不存在，创建新问题
-            console.log('创建新问题，task_id:', JSON.stringify(problemToSave.task_id));
-            
-            const { data } = await models.ai_problems.create({
-              data: problemToSave,
-            });
-            
-            console.log('问题创建成功，ID:', data.id);
-            
-            // 验证问题是否正确保存了task_id
-            try {
-              const { data: savedProblem } = await models.ai_problems.getOne({
-                id: data.id,
-              });
-              
-              if (savedProblem && savedProblem.task_id && savedProblem.task_id === taskId) {
-                console.log('验证问题task_id:', JSON.stringify(savedProblem.task_id));
-              } else {
-                console.error('问题保存后task_id为空或无效');
-              }
-            } catch (verifyError) {
-              console.error('验证问题task_id失败:', verifyError);
-            }
-            
-            return { success: true, problemId: data.id, created: true };
-          }
-        } catch (error) {
-          console.error('保存问题数据失败:', error);
-          
-          // 如果查询失败，直接尝试创建问题
-          try {
-            console.log('直接创建问题，task_id:', JSON.stringify(problemToSave.task_id));
-            
-            const { data } = await models.ai_problems.create({
-              data: problemToSave,
-            });
-            
-            console.log('问题创建成功，ID:', data.id);
-            
-            // 验证问题是否正确保存了task_id
-            try {
-              const { data: savedProblem } = await models.ai_problems.getOne({
-                id: data.id,
-              });
-              
-              if (savedProblem && savedProblem.task_id && savedProblem.task_id === taskId) {
-                console.log('验证问题task_id:', JSON.stringify(savedProblem.task_id));
-              } else {
-                console.error('问题保存后task_id为空或无效');
-              }
-            } catch (verifyError) {
-              console.error('验证问题task_id失败:', verifyError);
-            }
-            
-            return { success: true, problemId: data.id, created: true };
-          } catch (createError) {
-            console.error('创建问题失败:', createError);
-            throw createError;
+          if (existingProblems.length > 0) {
+            console.log(`问题 ${problemData.problem_key} 已存在，跳过保存`);
+            return { 
+              success: true, 
+              message: '问题已存在，无需新增',
+              problem: existingProblems[0]
+            };
           }
         }
+        
+        // 创建一个新的问题对象，确保数据格式正确
+        const problemToSave = {
+          answered: problemData.answered || false,
+          task_id: taskId,
+          content: problemData.content || '',
+          undefined_nwerz: {}, // 根据API要求
+          problem_key: problemData.problem_key || `problem_${Date.now()}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          answer_records: JSON.stringify(problemData.answer_records || []),
+          options: JSON.stringify(problemData.options || []),
+          correct_answer: problemData.correct_answer || '',
+          problem_type: problemData.problem_type || 'text',
+        };
+        
+        // 创建问题
+        const { data } = await models.ai_problems.create({
+          data: problemToSave,
+        });
+        
+        if (data && data.id) {
+          console.log(`问题 ${problemToSave.problem_key} 创建成功，ID:`, data.id);
+          
+          // 添加_id字段，与数据库ID保持一致
+          problemToSave._id = data.id;
+          
+          return {
+            success: true,
+            problem: problemToSave
+          };
+        } else {
+          console.error('创建问题失败，返回数据无效');
+          return { 
+            success: false, 
+            error: '创建问题失败，返回数据无效' 
+          };
+        }
       } catch (error) {
-        console.error('保存问题数据到数据库失败:', error);
-        return { success: false, error: error.message || '未知错误' };
+        console.error('保存问题时出错:', error);
+        return { 
+          success: false, 
+          error: error.message || '保存问题时出错' 
+        };
       }
     }
     
     // 批量保存多个问题到数据库
     async function saveProblemsToDatabase(problemsArray, taskId) {
+      if (!problemsArray || !Array.isArray(problemsArray) || problemsArray.length === 0) {
+        console.error('保存问题失败: 问题数组为空');
+        return { success: false, error: '问题数组为空' };
+      }
+      
+      if (!taskId) {
+        console.error('保存问题失败: 未提供任务ID');
+        return { success: false, error: '未提供任务ID' };
+      }
+      
+      console.log(`准备保存 ${problemsArray.length} 个问题到任务 ${taskId}`);
+      
       try {
-        if (!problemsArray || !Array.isArray(problemsArray) || problemsArray.length === 0) {
-          console.error('无效的问题数组');
-          return { success: false, error: '无效的问题数组' };
+        // 先检查数据库中是否已存在与该任务关联的问题
+        const existingProblemsResult = await models.ai_problems.list({
+          filter: { task_id: taskId }
+        });
+        
+        let existingProblems = [];
+        if (existingProblemsResult && existingProblemsResult.data) {
+          existingProblems = Array.isArray(existingProblemsResult.data) ? 
+                            existingProblemsResult.data : 
+                            (existingProblemsResult.data.records || []);
+          
+          console.log(`数据库中已存在 ${existingProblems.length} 个与任务 ${taskId} 关联的问题`);
         }
         
-        if (!taskId) {
-          console.error('未提供任务ID，无法保存问题数据');
-          return { success: false, error: '未提供任务ID' };
+        // 创建一个Map来存储已存在的问题，以problem_key为键
+        const existingProblemMap = new Map();
+        existingProblems.forEach(problem => {
+          if (problem.problem_key) {
+            existingProblemMap.set(problem.problem_key, problem);
+          }
+        });
+        
+        // 过滤出需要新增的问题
+        const newProblems = problemsArray.filter(problem => {
+          if (!problem.problem_key) {
+            return true; // 没有problem_key的问题视为新问题
+          }
+          return !existingProblemMap.has(problem.problem_key);
+        });
+        
+        console.log(`需要新增 ${newProblems.length} 个问题，跳过 ${problemsArray.length - newProblems.length} 个已存在的问题`);
+        
+        if (newProblems.length === 0) {
+          console.log('没有新问题需要保存');
+          return { 
+            success: true, 
+            message: '所有问题已存在，无需新增',
+            results: existingProblems
+          };
         }
         
-        console.log(`准备批量保存 ${problemsArray.length} 个问题，关联到任务ID:`, taskId);
-        console.log('任务ID类型:', typeof taskId, '值:', taskId);
-        
-        // 确保taskId是字符串类型
-        taskId = String(taskId);
-        console.log('转换后的任务ID类型:', typeof taskId, '值:', taskId);
-        
-        // 放弃使用批量查询和创建，改为逐个处理问题
-        console.log('开始逐个处理问题...');
-        
+        // 保存新问题
         const results = [];
-        let successCount = 0;
-        let failCount = 0;
-        
-        // 逐个处理每个问题
-        for (let i = 0; i < problemsArray.length; i++) {
-          const problem = problemsArray[i];
-          console.log(`处理第 ${i+1}/${problemsArray.length} 个问题:`, problem.problem_key);
+        for (let i = 0; i < newProblems.length; i++) {
+          const problem = newProblems[i];
+          
+          // 确保问题关联到正确的任务
+          problem.task_id = taskId;
           
           try {
-            // 创建一个新的问题对象，确保数据格式正确
-            const problemToSave = {
-              answered: problem.answered || false,
-              task_id: taskId, // 使用字符串格式，而不是对象
-              content: problem.content || '',
-              undefined_nwerz: {}, // 根据API要求
-              problem_key: problem.problem_key || `problem_${i+1}`,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              answer_records: JSON.stringify(problem.answer_records || []), // 将答题记录转为字符串存储
-              options: JSON.stringify(problem.options || []), // 将选项转为字符串存储
-              correct_answer: problem.correct_answer || '',
-              problem_type: problem.problem_type || 'text', // 问题类型：text, choice, etc.
-            };
-            
-            console.log(`问题 ${problemToSave.problem_key} 的task_id设置为:`, problemToSave.task_id);
-            
-            // 创建问题
-            console.log(`开始创建问题 ${problemToSave.problem_key}，task_id:`, JSON.stringify(problemToSave.task_id));
-            const { data } = await models.ai_problems.create({
-              data: problemToSave,
-            });
-            
-            console.log(`问题 ${problemToSave.problem_key} 创建结果:`, data);
-            
-            if (data && data.id) {
-              // 验证问题是否正确保存了task_id
-              try {
-                // 使用get方法代替getOne，避免不支持的操作错误
-                const { data: problems } = await models.ai_problems.get({
-                  filter: {
-                    where: {
-                      $and: [
-                        {
-                          _id: {
-                            $eq: data.id,
-                          },
-                        },
-                      ]
-                    }
-                  },
-                });
-                
-                const savedProblem = problems && problems.length > 0 ? problems[0] : null;
-                
-                console.log(`验证问题 ${problemToSave.problem_key} 的task_id:`, 
-                  savedProblem ? JSON.stringify(savedProblem.task_id) : '未找到问题');
-                
-                if (savedProblem && savedProblem.task_id && savedProblem.task_id === taskId) {
-                  console.log(`✅ 问题 ${problemToSave.problem_key} 的task_id验证成功`);
-                } else {
-                  console.error(`❌ 问题 ${problemToSave.problem_key} 的task_id验证失败:`, 
-                    savedProblem ? savedProblem.task_id : '未找到问题');
-                }
-              } catch (verifyError) {
-                console.error(`验证问题 ${problemToSave.problem_key} 的task_id时出错:`, verifyError);
-              }
-              
-              results.push({
-                success: true,
-                problemId: data.id,
-                problem_key: problemToSave.problem_key
-              });
-              successCount++;
+            const result = await saveProblemToDatabase(problem, taskId);
+            if (result.success) {
+              results.push(result.problem);
             } else {
-              results.push({
-                success: false,
-                problem_key: problemToSave.problem_key,
-                error: '创建问题失败'
-              });
-              failCount++;
+              console.error(`保存第 ${i+1} 个问题失败:`, result.error);
             }
-          } catch (problemError) {
-            console.error(`创建问题 ${problem.problem_key || `problem_${i+1}`} 时出错:`, problemError);
-            results.push({
-              success: false,
-              problem_key: problem.problem_key || `problem_${i+1}`,
-              error: problemError.message || '创建问题时出错'
-            });
-            failCount++;
-            
-            // 尝试直接创建一个简化版本的问题
-            try {
-              console.log(`尝试创建简化版本的问题 ${problem.problem_key || `problem_${i+1}`}`);
-              const simpleProblem = {
-                task_id: taskId, // 使用字符串格式，而不是对象
-                content: problem.content || '',
-                undefined_nwerz: {},
-                problem_key: problem.problem_key || `problem_${i+1}`,
-                created_at: new Date().toISOString(),
-              };
-              
-              const { data } = await models.ai_problems.create({
-                data: simpleProblem,
-              });
-              
-              if (data && data.id) {
-                console.log(`简化版本的问题 ${simpleProblem.problem_key} 创建成功，ID:`, data.id);
-                // 更新结果
-                results[results.length - 1] = {
-                  success: true,
-                  problemId: data.id,
-                  problem_key: simpleProblem.problem_key,
-                  simplified: true
-                };
-                successCount++;
-                failCount--;
-              }
-            } catch (simpleError) {
-              console.error(`创建简化版本的问题也失败:`, simpleError);
-            }
+          } catch (error) {
+            console.error(`保存第 ${i+1} 个问题时出错:`, error);
           }
         }
         
-        console.log(`问题保存完成: 成功 ${successCount} 个, 失败 ${failCount} 个`);
+        // 合并新保存的问题和已存在的问题
+        const allProblems = [...results, ...existingProblems];
+        
+        console.log(`成功保存 ${results.length} 个新问题，总共有 ${allProblems.length} 个问题与任务关联`);
+        
         return {
-          success: successCount > 0,
-          results: results,
-          successCount: successCount,
-          failCount: failCount
+          success: true,
+          results: allProblems
         };
       } catch (error) {
         console.error('保存问题数据时出错:', error);
@@ -660,43 +534,109 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
     
     // 修改保存任务函数，同时保存相关问题
     async function saveTaskWithProblems(taskData) {
+      console.log('保存任务和问题:', taskData);
+      
+      if (!taskData) {
+        console.error('保存任务失败: 任务数据为空');
+        return { success: false, error: '任务数据为空' };
+      }
+      
       try {
-        if (!taskData) {
-          console.error('无效的任务数据');
-          return { success: false, error: '无效的任务数据' };
-        }
-        
-        // 提取问题数据
-        const problems = taskData.problems || [];
-        delete taskData.problems;
-        
-        console.log('准备保存任务和问题，任务标题:', taskData.title, '问题数量:', problems.length);
-        
         // 保存任务
         const taskResult = await saveTaskToDatabase(taskData);
         
         if (!taskResult.success) {
-          console.error('保存任务失败，无法继续保存问题:', taskResult.error);
-          return { success: false, error: '保存任务失败，无法继续保存问题' };
+          console.error('保存任务失败:', taskResult.error);
+          return { success: false, error: taskResult.error || '保存任务失败' };
         }
         
         const taskId = taskResult.taskId;
-        console.log('任务保存成功，ID:', taskId, '开始保存关联的问题');
+        console.log('任务保存成功，ID:', taskId);
         
-        // 保存问题
-        if (problems.length > 0) {
-          console.log(`开始保存 ${problems.length} 个问题，关联到任务ID: ${taskId}`);
-          const problemsResult = await saveProblemsToDatabase(problems, taskId);
+        // 检查是否有问题数据需要保存
+        if (taskData.problems && Array.isArray(taskData.problems) && taskData.problems.length > 0) {
+          console.log(`准备保存 ${taskData.problems.length} 个问题`);
           
-          console.log('问题保存结果:', problemsResult);
+          // 先检查数据库中是否已存在与该任务关联的问题
+          const existingProblemsResult = await models.ai_problems.list({
+            filter: { task_id: taskId }
+          });
           
+          let existingProblems = [];
+          if (existingProblemsResult && existingProblemsResult.data) {
+            existingProblems = Array.isArray(existingProblemsResult.data) ? 
+                              existingProblemsResult.data : 
+                              (existingProblemsResult.data.records || []);
+            
+            console.log(`数据库中已存在 ${existingProblems.length} 个与任务 ${taskId} 关联的问题`);
+          }
+          
+          // 创建一个Map来存储已存在的问题，以problem_key为键
+          const existingProblemMap = new Map();
+          existingProblems.forEach(problem => {
+            if (problem.problem_key) {
+              existingProblemMap.set(problem.problem_key, problem);
+            }
+          });
+          
+          // 检查是否有重复的problem_key
+          const problemKeys = new Set();
+          const uniqueProblems = [];
+          
+          taskData.problems.forEach(problem => {
+            const key = problem.problem_key;
+            
+            // 如果数据库中已存在该问题，跳过
+            if (key && existingProblemMap.has(key)) {
+              console.warn('数据库中已存在问题，跳过:', key);
+              return;
+            }
+            
+            // 如果当前批次中已有相同key的问题，跳过
+            if (key && problemKeys.has(key)) {
+              console.warn('发现重复的problem_key，跳过:', key);
+              return;
+            }
+            
+            // 添加到唯一问题列表
+            if (key) {
+              problemKeys.add(key);
+            }
+            uniqueProblems.push(problem);
+          });
+          
+          console.log(`去重后有 ${uniqueProblems.length} 个新问题需要保存`);
+          
+          if (uniqueProblems.length === 0) {
+            console.log('没有新问题需要保存');
+            return { 
+              success: true, 
+              taskId: taskId,
+              message: '所有问题已存在，无需新增',
+              problemsResult: { success: true, results: existingProblems }
+            };
+          }
+          
+          // 保存问题
+          const problemsResult = await saveProblemsToDatabase(uniqueProblems, taskId);
+          
+          if (!problemsResult.success) {
+            console.error('保存问题失败:', problemsResult.error);
+            return { 
+              success: true, // 任务已保存成功，所以返回true
+              taskId: taskId,
+              problemsResult: problemsResult
+            };
+          }
+          
+          console.log('问题保存成功');
           return {
             success: true,
             taskId: taskId,
             problemsResult: problemsResult
           };
         } else {
-          console.log('没有问题需要保存');
+          console.log('没有问题数据需要保存');
           return {
             success: true,
             taskId: taskId,
@@ -723,56 +663,79 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
       }
       
       try {
-        // 获取任务信息
-        const taskResult = await models.ai_tasks.get({
-          id: taskId
+        // 创建一个Map来存储已处理的problem_key，用于去重
+        const processedProblemKeys = new Map();
+        let problems = [];
+        
+        // 使用完整的where条件格式查询问题
+        console.log(`直接查询与任务ID ${taskId} 关联的问题`);
+        const problemsResult = await models.ai_problems.list({
+          filter: {
+            where: {
+              $and: [
+                {
+                  task_id: {
+                    $eq: taskId,
+                  },
+                },
+              ]
+            }
+          },
+          pageSize: 100, // 获取足够多的问题
+          pageNumber: 1,
+          getCount: true,
         });
         
-        if (!taskResult || !taskResult.data) {
-          console.error('获取任务问题失败: 未找到任务数据');
-          return {
-            success: false,
-            error: '未找到任务数据',
-            problems: []
-          };
+        if (problemsResult && problemsResult.data) {
+          const taskProblems = Array.isArray(problemsResult.data) ? 
+                           problemsResult.data : 
+                           (problemsResult.data.records || []);
+          
+          console.log(`获取到与task_id=${taskId} 关联的问题数量:`, taskProblems.length);
+          
+          // 打印所有问题的关键信息，帮助排查
+          taskProblems.forEach((problem, index) => {
+            console.log(`问题 ${index+1}: _id=${problem._id}, problem_key=${problem.problem_key}, task_id=${problem.task_id}, content=${problem.content ? problem.content.substring(0, 20) + '...' : '无内容'}`);
+          });
+          
+          // 使用Map进行去重，以problem_key为键，以_id为值
+          taskProblems.forEach(problem => {
+            const key = problem.problem_key;
+            if (!key) {
+              // 没有problem_key的问题直接添加
+              console.log(`问题没有problem_key，直接添加: _id=${problem._id}, task_id=${problem.task_id}`);
+              problems.push(problem);
+              return;
+            }
+            
+            // 检查是否已经处理过相同problem_key的问题
+            if (processedProblemKeys.has(key)) {
+              const existingId = processedProblemKeys.get(key);
+              console.log(`发现重复问题: problem_key=${key}, 已存在的_id=${existingId}, 当前_id=${problem._id}`);
+              return; // 跳过重复的问题
+            }
+            
+            // 记录并添加新问题
+            processedProblemKeys.set(key, problem._id);
+            console.log(`添加问题: problem_key=${key}, _id=${problem._id}, task_id=${problem.task_id}`);
+            problems.push(problem);
+          });
         }
         
-        const task = taskResult.data;
-        console.log('获取到任务数据:', task);
+        console.log('去重后的题目数量:', problems.length);
+        console.log('去重后的题目problem_keys:', problems.map(p => p.problem_key).join(', '));
         
-        // 获取与任务关联的所有题目
-        const problemsResult = await models.ai_problems.list({
-          filter: { task_id: taskId }
-        });
-        
-        let problems = [];
-        if (problemsResult && problemsResult.data) {
-          problems = Array.isArray(problemsResult.data) ? 
-                     problemsResult.data : 
-                     (problemsResult.data.records || []);
-          
-          console.log('获取到题目数据, 数量:', problems.length);
-          
-          if (problems.length === 0) {
-            console.warn('任务没有关联的问题');
-            return {
-              success: false,
-              error: '任务没有关联的问题',
-              problems: []
-            };
-          }
-        } else {
-          console.warn('未找到与该任务关联的题目');
+        if (problems.length === 0) {
+          console.warn('任务没有关联的问题');
           return {
             success: false,
-            error: '未找到与该任务关联的题目',
+            error: '任务没有关联的问题',
             problems: []
           };
         }
         
         return {
           success: true,
-          task: task,
           problems: problems
         };
       } catch (error) {
@@ -799,110 +762,96 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
           return {
             success: false,
             error: '未提供任务ID',
-            task: { problems: [], settings: {}, problemsList: [] } // 返回一个带有必要属性的空对象
+            task: { problems: [], settings: {} }
           };
         }
         
         console.log('尝试获取任务详情，任务ID:', taskId);
         
-        // 创建一个默认的任务对象，确保即使查询失败也有返回值
-        let task = { 
-          problems: [], 
-          settings: {}, 
-          problemsList: [],
-          _id: '',
-          task_id: ''
-        };
+        // 通过_id查询任务
+        console.log('通过_id查询任务:', taskId);
+        const { data: tasks } = await models.ai_tasks.get({
+          filter: {
+            where: {
+              $and: [
+                {
+                  _id: {
+                    $eq: taskId,
+                  },
+                },
+              ]
+            }
+          },
+        });
         
-        let taskFound = false;
-        
-        try {
-          // 通过_id查询
-          console.log('通过_id查询任务:', taskId);
+        // 如果通过_id没找到，尝试通过task_id查询
+        let task = null;
+        if (tasks && tasks.length > 0) {
+          task = tasks[0];
+          console.log('通过_id找到任务:', task._id);
+        } else {
+          console.log('通过_id未找到任务，尝试使用task_id查询');
           
-          // 使用get方法查询
-          const { data: tasks } = await models.ai_tasks.get({
+          const { data: tasksList } = await models.ai_tasks.list({
             filter: {
               where: {
                 $and: [
                   {
-                    _id: {
+                    task_id: {
                       $eq: taskId,
                     },
                   },
                 ]
               }
             },
+            pageSize: 10,
+            pageNumber: 1,
           });
           
-          if (tasks && tasks.length > 0) {
-            task = tasks[0];
-            taskFound = true;
-            console.log('通过_id找到任务:', task._id);
-          } else {
-            console.log('通过_id未找到任务，尝试使用task_id查询');
-            
-            // 如果通过_id没找到，尝试通过task_id查询
-            const { data: tasksList } = await models.ai_tasks.list({
-              filter: {
-                where: {
-                  $and: [
-                    {
-                      task_id: {
-                        $eq: taskId,
-                      },
-                    },
-                  ]
-                }
-              },
-              pageSize: 10,
-              pageNumber: 1,
-            });
-            
-            if (tasksList && tasksList.records && tasksList.records.length > 0) {
-              task = tasksList.records[0];
-              taskFound = true;
-              console.log('通过task_id找到任务:', task._id || '未知ID');
-            } else {
-              // 最后尝试列出所有任务，然后在客户端过滤
-              console.log('尝试列出所有任务并在客户端过滤');
-              const { data: allTasks } = await models.ai_tasks.list({
-                pageSize: 100,
-                pageNumber: 1,
-              });
-              
-              if (allTasks && allTasks.records) {
-                console.log(`获取到 ${allTasks.records.length} 个任务，尝试查找ID为 ${taskId} 的任务`);
-                
-                // 在客户端过滤任务
-                const foundTask = allTasks.records.find(t => 
-                  t._id === taskId || t.task_id === taskId || t.id === taskId
-                );
-                
-                if (foundTask) {
-                  task = foundTask;
-                  taskFound = true;
-                  console.log('在所有任务中找到匹配的任务:', task._id);
-                } else {
-                  console.error('在所有任务中未找到匹配的任务');
-                  // 输出所有任务的ID，帮助调试
-                  allTasks.records.forEach((t, index) => {
-                    console.log(`任务 ${index+1}: _id=${t._id}, task_id=${t.task_id}, id=${t.id}`);
-                  });
-                }
-              }
-            }
+          if (tasksList && tasksList.records && tasksList.records.length > 0) {
+            task = tasksList.records[0];
+            console.log('通过task_id找到任务:', task._id || '未知ID');
           }
-        } catch (error) {
-          console.error('查询任务出错:', error);
         }
         
-        if (!taskFound) {
+        // 如果仍然没有找到任务，尝试列出所有任务并在客户端过滤
+        if (!task) {
+          console.log('尝试列出所有任务并在客户端过滤，查找ID:', taskId);
+          
+          const { data: allTasks } = await models.ai_tasks.list({
+            pageSize: 100,
+            pageNumber: 1,
+          });
+          
+          if (allTasks && allTasks.records && allTasks.records.length > 0) {
+            console.log(`获取到 ${allTasks.records.length} 个任务，尝试查找ID为 ${taskId} 的任务`);
+            
+            // 输出所有任务的ID，帮助调试
+            allTasks.records.forEach((t, index) => {
+              console.log(`任务 ${index+1}: _id=${t._id}, task_id=${t.task_id}, id=${t.id}`);
+            });
+            
+            // 在客户端过滤任务，尝试匹配所有可能的ID字段
+            task = allTasks.records.find(t => 
+              t._id === taskId || 
+              t.task_id === taskId || 
+              t.id === taskId
+            );
+            
+            if (task) {
+              console.log('在所有任务中找到匹配的任务:', task._id);
+            } else {
+              console.error('在所有任务中未找到匹配的任务');
+            }
+          }
+        }
+        
+        if (!task) {
           console.error('未找到任务:', taskId);
           return {
             success: false,
             error: '未找到任务',
-            task: { problems: [], settings: {}, problemsList: [] } // 返回一个带有必要属性的空对象
+            task: { problems: [], settings: {} }
           };
         }
         
@@ -926,24 +875,23 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
           task.settings = typeof task.settings === 'object' ? task.settings : {};
         }
         
-        // 初始化problemsList为空数组
-        task.problemsList = [];
-        
         // 获取任务关联的问题列表
         try {
           // 确保taskId有效后再获取问题
           const taskIdForProblems = task._id || task.id || taskId;
           if (taskIdForProblems) {
             console.log('获取任务问题，使用任务ID:', taskIdForProblems);
+            
+            // 直接从数据库获取问题
             const problemsResult = await getTaskProblems(taskIdForProblems);
             
             if (problemsResult && problemsResult.success) {
-              task.problemsList = Array.isArray(problemsResult.problems) ? problemsResult.problems : [];
-              console.log(`成功获取任务 ${taskIdForProblems} 的问题列表，共 ${task.problemsList.length} 个问题`);
+              task.problems = Array.isArray(problemsResult.problems) ? problemsResult.problems : [];
+              console.log(`成功获取任务 ${taskIdForProblems} 的问题列表，共 ${task.problems.length} 个问题`);
             } else {
               console.error('获取任务问题失败:', problemsResult ? problemsResult.error : '未知错误');
-              // 确保problemsList是一个空数组
-              task.problemsList = [];
+              // 确保problems是一个空数组
+              task.problems = [];
               
               // 如果是因为任务没有关联问题而失败，返回特定错误
               if (problemsResult && problemsResult.error === '任务没有关联的问题') {
@@ -957,8 +905,8 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
           }
         } catch (problemsError) {
           console.error('获取任务问题时出错:', problemsError);
-          // 出错时确保problemsList是一个空数组
-          task.problemsList = [];
+          // 出错时确保problems是一个空数组
+          task.problems = [];
         }
         
         return {
@@ -970,7 +918,7 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
         return {
           success: false,
           error: error.message || '获取任务详情时发生错误',
-          task: { problems: [], settings: {}, problemsList: [] } // 返回一个带有必要属性的空对象
+          task: { problems: [], settings: {} }
         };
       }
     };

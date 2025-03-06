@@ -12,10 +12,10 @@
       <view class="loading">加载中...</view>
     </block>
     
-    <block wx:elif="{{errorMessage}}">
+    <block wx:elif="{{errorMsg}}">
       <view class="error-message">
         <view class="error-icon">❌</view>
-        <view class="error-text">{{errorMessage}}</view>
+        <view class="error-text">{{errorMsg}}</view>
       </view>
     </block>
     
@@ -58,7 +58,7 @@
         <block wx:for="{{problemsList}}" wx:key="index">
           <view class="problem-item {{item.answered ? (item.lastCorrect ? 'correct' : 'incorrect') : ''}}" 
                 bindtap="viewProblemHistory" 
-                data-problem-id="{{item.problem_id || item._id || item.id}}" 
+                data-problem-id="{{item.id}}" 
                 data-problem-key="{{item.key}}">
             <view class="problem-header">
               <view class="problem-number">题目 {{item.index + 1}}</view>

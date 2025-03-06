@@ -113,158 +113,75 @@ Page({
   },
   
   // 从数据库加载任务和问题
-  loadTaskFromDatabase(taskId) {
+  async loadTaskFromDatabase(taskId) {
     console.log('开始从数据库加载任务，ID:', taskId);
     
-    // 检查任务ID是否有效
     if (!taskId) {
       console.error('任务ID为空，无法加载任务');
       this.setData({
-        isLoading: false,
-        loadError: true,
-        errorMessage: '任务ID为空，无法加载任务'
+        loading: false,
+        errorMsg: '任务ID为空，无法加载任务',
+        showError: true
       });
-      
+      wx.hideLoading();
       wx.showToast({
-        title: '任务ID无效',
-        icon: 'none'
+        title: '加载失败: 任务ID为空',
+        icon: 'none',
+        duration: 2000
       });
-      
-      return Promise.reject(new Error('任务ID为空'));
+      return;
     }
     
     // 显示加载提示
     wx.showLoading({
-      title: '加载中...',
+      title: '加载任务中...',
+      mask: true
     });
     
-    // 检查app对象和getTaskById方法
-    if (!app) {
-      console.error('app对象不存在，无法加载任务');
-      wx.hideLoading();
-      
+    // 检查app对象和getTaskById方法是否存在
+    if (!app || !app.getTaskById) {
+      console.error('app对象或getTaskById方法不存在');
       this.setData({
-        isLoading: false,
-        loadError: true,
-        errorMessage: 'app对象不存在'
+        loading: false,
+        errorMsg: '应用初始化失败，请重启应用',
+        showError: true
       });
-      
+      wx.hideLoading();
       wx.showToast({
-        title: '加载任务失败',
-        icon: 'none'
+        title: '加载失败: 应用初始化失败',
+        icon: 'none',
+        duration: 2000
       });
-      
-      return Promise.reject(new Error('app对象不存在'));
+      return;
     }
     
-    if (typeof app.getTaskById !== 'function') {
-      console.error('getTaskById方法不存在，无法加载任务');
-      wx.hideLoading();
-      
-      this.setData({
-        isLoading: false,
-        loadError: true,
-        errorMessage: 'getTaskById方法不存在'
-      });
-      
-      wx.showToast({
-        title: '加载任务失败',
-        icon: 'none'
-      });
-      
-      return Promise.reject(new Error('getTaskById方法不存在'));
-    }
-    
-    // 调用app.js中的getTaskById函数获取任务详情
-    return app.getTaskById(taskId)
-      .then(result => {
-        wx.hideLoading();
-        
-        // 检查结果是否有效
-        if (!result) {
-          console.error('获取任务详情失败: 返回结果为空');
-          
+    // 获取任务详情
+    const taskResult = await app.getTaskById(taskId);
+    console.log('获取任务详情结果:', taskResult);
+
+    if (taskResult.success) {
+      const task = taskResult.task;
+      if (task && (task._id || task.task_id)) {
+        // 初始化录音管理器
+        this.recorderManager = wx.getRecorderManager();
+        this.initRecorderManager();
+
+        // 获取任务关联的问题
+        const problems = task.problems || [];
+        if (!problems || problems.length === 0) {
+          console.error('任务没有关联的问题');
           this.setData({
-            isLoading: false,
-            loadError: true,
-            errorMessage: '获取任务详情失败: 返回结果为空'
+            loading: false,
+            errorMsg: '该任务没有关联的问题，请联系老师重新布置任务',
+            showError: true
           });
-          
+          wx.hideLoading();
           wx.showToast({
-            title: '加载任务失败',
-            icon: 'none'
+            title: '加载失败: 任务没有关联的问题',
+            icon: 'none',
+            duration: 2000
           });
-          
-          return Promise.reject(new Error('返回结果为空'));
-        }
-        
-        // 检查是否成功获取任务
-        if (!result.success || !result.task) {
-          const errorMsg = result.error || '未知错误';
-          console.error('获取任务详情失败:', errorMsg);
-          
-          this.setData({
-            isLoading: false,
-            loadError: true,
-            errorMessage: '获取任务详情失败: ' + errorMsg
-          });
-          
-          // 针对特定错误显示不同的提示信息
-          if (errorMsg === '任务没有关联的问题') {
-            wx.showToast({
-              title: '任务没有关联的问题',
-              icon: 'none',
-              duration: 3000
-            });
-            
-            // 尝试从本地存储加载任务信息
-            this.tryLoadFromLocalStorage(taskId);
-          } else {
-            wx.showToast({
-              title: '加载任务失败',
-              icon: 'none'
-            });
-          }
-          
-          return Promise.reject(new Error(errorMsg));
-        }
-        
-        // 获取任务对象
-        const task = result.task;
-        
-        // 确保task对象有_id属性
-        if (!task._id) {
-          console.warn('任务对象缺少_id属性，使用传入的taskId');
-          task._id = taskId;
-        }
-        
-        // 确保task对象有task_id属性
-        if (!task.task_id) {
-          console.warn('任务对象缺少task_id属性，使用_id作为task_id');
-          task.task_id = task._id;
-        }
-        
-        // 获取问题列表
-        const problems = task.problemsList || [];
-        
-        // 检查问题列表是否为空
-        if (problems.length === 0) {
-          console.warn('任务没有关联的问题');
-          
-          this.setData({
-            task: task,
-            problems: [],
-            isLoading: false,
-            loadError: true,
-            errorMessage: '该任务没有关联的问题'
-          });
-          
-          wx.showToast({
-            title: '任务没有问题',
-            icon: 'none'
-          });
-          
-          return Promise.reject(new Error('任务没有关联的问题'));
+          return;
         }
         
         // 确保每个问题都有_id属性
@@ -304,29 +221,42 @@ Page({
         console.log('任务和问题加载完成，共', problems.length, '个问题');
         console.log('任务ID:', task._id, '任务task_id:', task.task_id);
         
+        wx.hideLoading();
         return {
           success: true,
           task: task,
           problems: problems
         };
-      })
-      .catch(error => {
-        wx.hideLoading();
-        console.error('加载任务出错:', error);
-        
+      } else {
+        console.error('获取到的任务对象为空');
         this.setData({
-          isLoading: false,
-          loadError: true,
-          errorMessage: error ? (error.message || '加载任务时发生错误') : '未知错误'
+          loading: false,
+          errorMsg: '获取到的任务对象为空',
+          showError: true
         });
-        
+        wx.hideLoading();
         wx.showToast({
-          title: '加载出错',
-          icon: 'none'
+          title: '加载失败: 获取到的任务对象为空',
+          icon: 'none',
+          duration: 2000
         });
-        
-        return Promise.reject(error);
+        return Promise.reject(new Error('获取到的任务对象为空'));
+      }
+    } else {
+      console.error('获取任务详情失败:', taskResult.error);
+      this.setData({
+        loading: false,
+        errorMsg: taskResult.error || '获取任务详情失败，请稍后再试',
+        showError: true
       });
+      wx.hideLoading();
+      wx.showToast({
+        title: '加载失败: ' + (taskResult.error || '获取任务详情失败'),
+        icon: 'none',
+        duration: 2000
+      });
+      return Promise.reject(new Error(taskResult.error || '获取任务详情失败'));
+    }
   },
   
   // 切换到下一个问题
