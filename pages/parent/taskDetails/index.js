@@ -16,9 +16,25 @@ Page({
     }
   },
 
-  // 添加查看任务报告的函数
+  // 查看任务报告
   viewTaskReport: function() {
     const taskId = this.data.taskId;
+    
+    console.log('准备查看任务报告，taskId:', taskId);
+    
+    if (!taskId || taskId === 'undefined' || taskId === 'null') {
+      console.error('缺少有效的taskId，无法查看任务报告');
+      wx.showToast({
+        title: '无法找到任务ID',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 保存选中的任务ID，以备后续页面使用
+    this.setData({
+      selectedTaskId: taskId
+    });
     
     wx.navigateTo({
       url: `/pages/parent/taskReport/index?taskId=${taskId}`,

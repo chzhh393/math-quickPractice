@@ -26,7 +26,7 @@
     <block wx:elif="{{tasks && tasks.length > 0}}">
       <view class="tasks-list">
         <block wx:for="{{tasks}}" wx:key="id">
-          <view class="task-card" bindtap="viewTaskReport" data-task-id="{{item.id}}">
+          <view class="task-card" bindtap="viewTaskReport" data-task-id="{{item.task_id || item._id || item.id}}">
             <view class="task-header">
               <view class="task-title">{{item.title}}</view>
               <view class="task-status {{item.status === '已完成' ? 'completed' : item.status === '进行中' ? 'in-progress' : ''}}">

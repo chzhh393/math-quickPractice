@@ -55,25 +55,28 @@
       <view class="problems-list">
         <view class="list-title">题目详情</view>
         
-        <block wx:for="{{problemsList}}" wx:key="key" wx:for-item="problem">
-          <view class="problem-item" bindtap="viewProblemHistory" data-problem-key="{{problem.key}}">
+        <block wx:for="{{problemsList}}" wx:key="index">
+          <view class="problem-item {{item.answered ? (item.lastCorrect ? 'correct' : 'incorrect') : ''}}" 
+                bindtap="viewProblemHistory" 
+                data-problem-id="{{item.problem_id || item._id || item.id}}" 
+                data-problem-key="{{item.key}}">
             <view class="problem-header">
-              <view class="problem-number">题目 {{problem.index + 1}}</view>
-              <view class="problem-status {{problem.answered ? (problem.lastCorrect ? 'correct' : 'incorrect') : 'unanswered'}}">
-                {{problem.answered ? (problem.lastCorrect ? '正确' : '错误') : '未作答'}}
+              <view class="problem-number">题目 {{item.index + 1}}</view>
+              <view class="problem-status {{item.answered ? (item.lastCorrect ? 'correct' : 'incorrect') : 'unanswered'}}">
+                {{item.answered ? (item.lastCorrect ? '正确' : '错误') : '未作答'}}
               </view>
             </view>
             
-            <view class="problem-content">{{problem.content}}</view>
+            <view class="problem-content">{{item.content}}</view>
             
             <view class="problem-stats">
               <view class="attempt-count">
                 <text class="stat-label">尝试次数:</text>
-                <text class="stat-value">{{problem.attemptCount}}</text>
+                <text class="stat-value">{{item.attemptCount}}</text>
               </view>
-              <view class="last-attempt-time" wx:if="{{problem.lastAttemptTime}}">
+              <view class="last-attempt-time" wx:if="{{item.lastAttemptTime}}">
                 <text class="stat-label">最近作答:</text>
-                <text class="stat-value">{{formatTime(problem.lastAttemptTime)}}</text>
+                <text class="stat-value">{{formatTime(item.lastAttemptTime)}}</text>
               </view>
             </view>
             
@@ -94,3 +97,4 @@
     </block>
   </view>
 </view> 
+

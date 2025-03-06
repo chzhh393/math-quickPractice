@@ -209,10 +209,22 @@ Page({
             errorMessage: '获取任务详情失败: ' + errorMsg
           });
           
-          wx.showToast({
-            title: '加载任务失败',
-            icon: 'none'
-          });
+          // 针对特定错误显示不同的提示信息
+          if (errorMsg === '任务没有关联的问题') {
+            wx.showToast({
+              title: '任务没有关联的问题',
+              icon: 'none',
+              duration: 3000
+            });
+            
+            // 尝试从本地存储加载任务信息
+            this.tryLoadFromLocalStorage(taskId);
+          } else {
+            wx.showToast({
+              title: '加载任务失败',
+              icon: 'none'
+            });
+          }
           
           return Promise.reject(new Error(errorMsg));
         }
@@ -1343,7 +1355,6 @@ Page({
             task_id: answerRecord.task_id,
             user_id: userId
           },
-          envType: "pre" // 使用体验环境
         };
         
         console.log('直接调用API的数据:', JSON.stringify(apiData));
@@ -1427,7 +1438,100 @@ Page({
     if (this.data.recordingTimeoutId) {
       clearTimeout(this.data.recordingTimeoutId);
     }
-  }
-}) 
+  },
 
+  // 尝试从本地存储加载任务信息
+  tryLoadFromLocalStorage: function(taskId) {
+    console.log('尝试从本地存储加载任务信息，taskId:', taskId);
+    
+    try {
+      // 从本地存储获取所有任务
+      const localTasks = wx.getStorageSync('localTasks') || [];
+      console.log('从本地存储获取到的任务数量:', localTasks.length);
+      
+      // 查找匹配的任务
+      const task = localTasks.find(t => 
+        t._id === taskId || t.task_id === taskId || t.id === taskId
+      );
+      
+      if (task) {
+        console.log('在本地存储中找到任务:', task);
+        
+        // 检查任务是否有问题列表
+        const problems = task.problems || task.problemsList || [];
+        
+        if (problems.length > 0) {
+          console.log('任务包含问题，数量:', problems.length);
+          
+          // 确保每个问题都有_id属性
+          problems.forEach((problem, index) => {
+            if (!problem._id) {
+              problem._id = `problem_${index}`;
+            }
+          });
+          
+          // 按problem_key排序问题
+          problems.sort((a, b) => {
+            const keyA = a.problem_key || '';
+            const keyB = b.problem_key || '';
+            return keyA.localeCompare(keyB);
+          });
+          
+          // 设置当前问题
+          const currentProblem = problems.length > 0 ? problems[0] : null;
+          
+          // 计算进度
+          const answeredCount = problems.filter(p => p.answered).length;
+          const progress = problems.length > 0 ? Math.floor(answeredCount / problems.length * 100) : 0;
+          
+          // 更新页面数据
+          this.setData({
+            task: task,
+            problems: problems,
+            currentProblem: currentProblem,
+            currentProblemIndex: 0,
+            progress: progress,
+            isLoading: false,
+            loadError: false,
+            errorMessage: ''
+          });
+          
+          wx.showToast({
+            title: '已从本地加载',
+            icon: 'success'
+          });
+          
+          return true;
+        } else {
+          console.warn('本地任务没有问题列表');
+          
+          this.setData({
+            loadError: true,
+            errorMessage: '本地任务没有问题列表'
+          });
+          
+          return false;
+        }
+      } else {
+        console.warn('在本地存储中未找到任务:', taskId);
+        
+        this.setData({
+          loadError: true,
+          errorMessage: '在本地存储中未找到任务'
+        });
+        
+        return false;
+      }
+    } catch (error) {
+      console.error('从本地存储加载任务时出错:', error);
+      
+      this.setData({
+        loadError: true,
+        errorMessage: '从本地存储加载任务时出错: ' + error.message
+      });
+      
+      return false;
+    }
+  },
+}) 
 

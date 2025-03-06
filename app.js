@@ -288,59 +288,65 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
       }
     }
 
-    // 从数据库获取用户的所有任务
+    // 获取用户任务
     async function getUserTasks(userId) {
       try {
+        console.log('开始获取用户任务，用户ID:', userId);
+        
         if (!userId) {
-          userId = wx.getStorageSync('userId');
-          if (!userId) {
-            console.error('未找到用户ID，无法获取任务');
-            return { success: false, error: '未找到用户ID' };
-          }
+          console.error('用户ID为空，无法获取任务');
+          return {
+            success: false,
+            error: '用户ID为空',
+            tasks: []
+          };
         }
         
-        console.log('尝试获取用户任务，用户ID:', userId);
-        
+        // 获取用户的所有任务
         const { data } = await models.ai_tasks.list({
-          filter: {
-            where: {
-              $and: [
-                {
-                  user_id: {
-                    $eq: userId,
-                  },
-                },
-              ]
-            }
-          },
-          pageSize: 100, // 获取最多100条任务
-          pageNumber: 1,
-          getCount: true,
-         
+          filter: { user_id: userId }
         });
         
-        console.log('获取到用户任务:', data);
-        
-        // 处理任务数据，将JSON字符串转回对象
-        if (data && data.records) {
-          data.records.forEach(task => {
-            try {
-              if (task.problems && typeof task.problems === 'string') {
-                task.problems = JSON.parse(task.problems);
-              }
-              if (task.settings && typeof task.settings === 'string') {
-                task.settings = JSON.parse(task.settings);
-              }
-            } catch (e) {
-              console.error('解析任务数据失败:', e);
-            }
-          });
+        // 检查返回的数据格式
+        if (!data) {
+          console.error('获取用户任务失败: 没有数据返回');
+          return {
+            success: false,
+            error: '没有数据返回',
+            tasks: []
+          };
         }
         
-        return { success: true, tasks: data.records, total: data.total };
+        // 处理不同的返回数据结构
+        const tasks = Array.isArray(data) ? data : (data.records || []);
+        
+        // 确保每个任务都有ID信息
+        const processedTasks = tasks.map(task => {
+          // 记录原始ID信息便于调试
+          console.log(`任务ID信息 - 原始id: ${task.id}, 原始_id: ${task._id}, 原始task_id: ${task.task_id}`);
+          
+          return {
+            ...task,
+            // 确保三个ID字段都有值
+            task_id: task.task_id || task._id || task.id,
+            _id: task._id || task.task_id || task.id,
+            id: task.id || task._id || task.task_id
+          };
+        });
+        
+        console.log('获取到用户任务，总数:', processedTasks.length);
+        
+        return {
+          success: true,
+          tasks: processedTasks
+        };
       } catch (error) {
         console.error('获取用户任务失败:', error);
-        return { success: false, error: error.message || '未知错误' };
+        return {
+          success: false,
+          error: error.message || '获取用户任务时发生错误',
+          tasks: []
+        };
       }
     }
 
@@ -703,63 +709,77 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
       }
     }
     
-    // 从数据库获取任务的所有问题
+    // 获取任务及其题目
     async function getTaskProblems(taskId) {
+      console.log('获取任务及其题目，taskId:', taskId);
+      
+      if (!taskId) {
+        console.error('获取任务问题失败: taskId不能为空');
+        return {
+          success: false,
+          error: 'taskId不能为空',
+          problems: []
+        };
+      }
+      
       try {
-        console.log('尝试获取任务问题，任务ID:', taskId);
+        // 获取任务信息
+        const taskResult = await models.ai_tasks.get({
+          id: taskId
+        });
         
-        if (!taskId) {
-          console.error('获取任务问题失败: 任务ID为空');
+        if (!taskResult || !taskResult.data) {
+          console.error('获取任务问题失败: 未找到任务数据');
           return {
             success: false,
-            error: '任务ID为空',
+            error: '未找到任务数据',
             problems: []
           };
         }
         
-        // 获取所有问题，然后在客户端过滤
-        try {
-          const { data } = await models.ai_problems.list({
-            pageSize: 200, // 限制最大返回数量为200条
-            pageNumber: 1,
-          });
+        const task = taskResult.data;
+        console.log('获取到任务数据:', task);
+        
+        // 获取与任务关联的所有题目
+        const problemsResult = await models.ai_problems.list({
+          filter: { task_id: taskId }
+        });
+        
+        let problems = [];
+        if (problemsResult && problemsResult.data) {
+          problems = Array.isArray(problemsResult.data) ? 
+                     problemsResult.data : 
+                     (problemsResult.data.records || []);
           
-          // 检查返回的数据格式
-          if (!data || !data.records || !Array.isArray(data.records)) {
-            console.error('获取任务问题失败: 返回结果格式错误', data);
+          console.log('获取到题目数据, 数量:', problems.length);
+          
+          if (problems.length === 0) {
+            console.warn('任务没有关联的问题');
             return {
               success: false,
-              error: '返回结果格式错误',
+              error: '任务没有关联的问题',
               problems: []
             };
           }
-          
-          console.log('获取到所有问题，数量:', data.records.length);
-          
-          // 在客户端过滤与任务相关的问题
-          const taskProblems = data.records.filter(problem => {
-            return problem && problem.task_id === taskId;
-          });
-          
-          console.log(`获取到任务 ${taskId} 的问题，数量:`, taskProblems.length);
-          
-          return {
-            success: true,
-            problems: taskProblems
-          };
-        } catch (listError) {
-          console.error('列出问题时出错:', listError);
+        } else {
+          console.warn('未找到与该任务关联的题目');
           return {
             success: false,
-            error: listError.message || '列出问题时出错',
+            error: '未找到与该任务关联的题目',
             problems: []
           };
         }
+        
+        return {
+          success: true,
+          task: task,
+          problems: problems
+        };
       } catch (error) {
-        console.error('获取任务问题出错:', error);
+        console.error('获取任务及题目失败:', error);
         return {
           success: false,
-          error: error.message || '获取任务问题时发生错误',
+          error: error.message || '获取任务及题目时发生错误',
           problems: []
         };
       }
@@ -924,6 +944,15 @@ const models = client.models; // 或者也可以直接从 wx.cloud.models 上获
               console.error('获取任务问题失败:', problemsResult ? problemsResult.error : '未知错误');
               // 确保problemsList是一个空数组
               task.problemsList = [];
+              
+              // 如果是因为任务没有关联问题而失败，返回特定错误
+              if (problemsResult && problemsResult.error === '任务没有关联的问题') {
+                return {
+                  success: false,
+                  error: '任务没有关联的问题',
+                  task: task
+                };
+              }
             }
           }
         } catch (problemsError) {
