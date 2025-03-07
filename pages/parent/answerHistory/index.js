@@ -231,7 +231,20 @@ Page({
     // 查询答题记录
     try {
       app.models.ai_answer_records.list({
-        filter: { problem_id: problemId }
+        filter: { 
+          where: {
+            $and: [
+              {
+                problem_id: {
+                  $eq: problemId
+                }
+              }
+            ]
+          }
+        },
+        pageSize: 100,
+        pageNumber: 1,
+        getCount: true
       })
       .then(result => {
         console.log('答题记录查询结果:', result);
@@ -306,7 +319,17 @@ Page({
     console.log('加载问题内容...');
     
     app.models.ai_problems.get({
-      id: problemId
+      filter: {
+        where: {
+          $and: [
+            {
+              _id: {
+                $eq: problemId
+              }
+            }
+          ]
+        }
+      }
     })
     .then(result => {
       console.log('问题内容查询结果:', result);
@@ -320,7 +343,54 @@ Page({
         
         console.log('问题内容加载成功');
       } else {
-        console.warn('未获取到问题内容');
+        console.warn('通过_id未获取到问题内容，尝试通过problem_key查询');
+        
+        // 如果有problemKey，尝试通过problem_key查询
+        const problemKey = this.data.problemKey;
+        if (problemKey) {
+          app.models.ai_problems.list({
+            filter: {
+              where: {
+                $and: [
+                  {
+                    problem_key: {
+                      $eq: problemKey
+                    }
+                  }
+                ]
+              }
+            },
+            pageSize: 10,
+            pageNumber: 1
+          })
+          .then(keyResult => {
+            console.log('通过problem_key查询结果:', keyResult);
+            
+            let problem = null;
+            if (keyResult && keyResult.data) {
+              // 处理两种可能的数据结构
+              if (Array.isArray(keyResult.data) && keyResult.data.length > 0) {
+                problem = keyResult.data[0];
+              } else if (keyResult.data.records && Array.isArray(keyResult.data.records) && keyResult.data.records.length > 0) {
+                problem = keyResult.data.records[0];
+              }
+            }
+            
+            if (problem) {
+              console.log('通过problem_key找到问题内容:', problem.content);
+              this.setData({
+                problemContent: problem.content
+              });
+            } else {
+              console.warn('通过problem_key仍未找到问题内容');
+            }
+          })
+          .catch(keyError => {
+            console.error('通过problem_key查询问题内容失败:', keyError);
+          });
+        } else {
+          console.warn('未提供problem_key，无法进行备用查询');
+        }
       }
     })
     .catch(error => {
