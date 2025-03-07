@@ -110,7 +110,7 @@ Component({
     // 开始录音
     startRecording() {
       const options = {
-        duration: 120000, // 最长2分钟
+        duration: 300000, // 最长5分钟
         sampleRate: 16000,
         numberOfChannels: 1,
         encodeBitRate: 64000,
