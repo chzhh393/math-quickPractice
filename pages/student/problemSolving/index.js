@@ -714,7 +714,7 @@ Page({
   startRecording: function() {
     // 配置录音参数
     const options = {
-      duration: 60000, // 最长录音时间，单位ms，最大值为60000（1分钟）
+      duration: 300000, // 最长录音时间，单位ms，最大值为300000（5分钟）
       sampleRate: 16000, // 采样率
       numberOfChannels: 1, // 录音通道数
       encodeBitRate: 48000, // 编码码率
